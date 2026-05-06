@@ -20,7 +20,7 @@ _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 _CARD_URL = f"/{DOMAIN}/sportguiden-card.js"
-_CARD_VERSION = "1"
+_CARD_VERSION = "2"
 
 
 # ─── Frontend helpers ──────────────────────────────────────────────
@@ -30,6 +30,8 @@ async def _register_card(hass: HomeAssistant) -> None:
     """Register the Lovelace JS card as a static path + frontend resource."""
     www_dir = pathlib.Path(__file__).parent / "www"
     js_path = str(www_dir / "sportguiden-card.js")
+
+    _LOGGER.warning("SportGuiden: registering card from %s", js_path)
 
     registered = False
     try:
@@ -54,7 +56,7 @@ async def _register_card(hass: HomeAssistant) -> None:
 
     url = f"{_CARD_URL}?v={_CARD_VERSION}"
     add_extra_js_url(hass, url)
-    _LOGGER.info("SportGuiden: card registered (v%s)", _CARD_VERSION)
+    _LOGGER.warning("SportGuiden: card registered at %s", url)
 
 
 # ─── WebSocket API ─────────────────────────────────────────────────
@@ -78,29 +80,35 @@ async def ws_get_sources(
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up SportGuiden (called early for frontend registration)."""
+    _LOGGER.warning("SportGuiden: async_setup called")
     hass.data.setdefault(DOMAIN, {})
 
-    # Register WS command
-    websocket_api.async_register_command(hass, ws_get_sources)
-
-    # Register card early so it's available in the frontend
+    # Register card FIRST (most important)
     await _register_card(hass)
-    hass.data[DOMAIN]["_cards_done"] = True
 
+    # Register WS command
+    try:
+        websocket_api.async_register_command(hass, ws_get_sources)
+    except Exception:  # noqa: BLE001
+        pass
+
+    hass.data[DOMAIN]["_cards_done"] = True
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up SportGuiden from a config entry."""
+    _LOGGER.warning("SportGuiden: async_setup_entry called")
     hass.data.setdefault(DOMAIN, {})
 
-    # Fallback: if async_setup was skipped, register everything here
+    # Fallback: if async_setup was skipped, register card here
     if not hass.data[DOMAIN].get("_cards_done"):
+        _LOGGER.warning("SportGuiden: async_setup was skipped, registering in entry")
+        await _register_card(hass)
         try:
             websocket_api.async_register_command(hass, ws_get_sources)
         except Exception:  # noqa: BLE001
             pass
-        await _register_card(hass)
         hass.data[DOMAIN]["_cards_done"] = True
 
     # Determine which sources to scrape
