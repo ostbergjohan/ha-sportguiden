@@ -10,7 +10,7 @@
 
 console.log("SportGuiden: card JS loaded");
 
-const SPORTGUIDEN_VERSION = "2.18.0";
+const SPORTGUIDEN_VERSION = "2.20.0";
 
 const LOGOS_BASE = "/sportguiden/logos";
 const _LOGO_MAP = [
@@ -269,7 +269,7 @@ class SportguidenCard extends HTMLElement {
         .sg-card {
           ${bg}
           border-radius: 16px;
-          padding: ${c.compact ? "6px 10px" : "8px 14px"};
+          padding: ${c.compact ? "0 10px 6px" : "0 14px 8px"};
           color: ${textColor};
           font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
           position: relative;
@@ -291,6 +291,7 @@ class SportguidenCard extends HTMLElement {
             ? "flex-direction: column; align-items: center; text-align: center;"
             : "align-items: center;"}
           gap: 8px;
+          padding-top: ${c.compact ? "6px" : "10px"};
           margin-bottom: ${c.compact ? "4px" : "6px"};
         }
         .sg-header-row {
@@ -300,15 +301,16 @@ class SportguidenCard extends HTMLElement {
           ${(c.header_icon_align || "left") === "center" ? "justify-content: center;" : "flex: 1;"}
         }
         .sg-header-icon {
-          width: ${c.header_icon_size || 80}px; height: ${c.header_icon_size || 80}px;
-          border-radius: 12px;
-          display: flex; align-items: center; justify-content: center;
+          max-width: ${c.header_icon_size || 80}px;
           flex-shrink: 0;
+          border-radius: 8px;
           overflow: hidden;
+          line-height: 0;
         }
         .sg-header-icon img {
-          width: 100%; height: 100%;
-          object-fit: contain;
+          width: 100%;
+          height: auto;
+          display: block;
         }
         .sg-title {
           font-size: ${c.compact ? "1.1em" : "1.3em"};
