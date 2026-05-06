@@ -10,7 +10,7 @@
 
 console.log("SportGuiden: card JS loaded");
 
-const SPORTGUIDEN_VERSION = "2.15.0";
+const SPORTGUIDEN_VERSION = "2.16.0";
 
 const LOGOS_BASE = "/sportguiden/logos";
 const _LOGO_MAP = [
@@ -125,6 +125,7 @@ class SportguidenCard extends HTMLElement {
       card_bg_color: "",
       text_color: "",
       show_title: true,
+      header_icon_align: "left",
       show_channel_logo: !legacyOff,
       show_channel_name: !legacyOff,
       show_league: true,
@@ -286,9 +287,17 @@ class SportguidenCard extends HTMLElement {
         }
         .sg-header {
           display: flex;
+          ${(c.header_icon_align || "left") === "center"
+            ? "flex-direction: column; align-items: center; text-align: center;"
+            : "align-items: center;"}
+          gap: 8px;
+          margin-bottom: ${c.compact ? "8px" : "14px"};
+        }
+        .sg-header-row {
+          display: flex;
           align-items: center;
-          gap: 12px;
-          margin-bottom: ${c.compact ? "12px" : "20px"};
+          gap: 8px;
+          ${(c.header_icon_align || "left") === "center" ? "justify-content: center;" : "flex: 1;"}
         }
         .sg-header-icon {
           width: ${c.header_icon_size || 80}px; height: ${c.header_icon_size || 80}px;
@@ -415,16 +424,19 @@ class SportguidenCard extends HTMLElement {
         .sg-empty-icon { font-size: 2.5em; margin-bottom: 8px; }
       </style>
       <div class="sg-card">
-        ${c.show_header_icon || c.show_title !== false ? `
-        <div class="sg-header">
-          ${c.show_header_icon ? `
-            <div class="sg-header-icon">
-              <img src="/sportguiden/logos/card.png" alt="SportGuiden">
-            </div>
-          ` : ""}
-          ${c.show_title !== false ? `<div class="sg-title">${title}</div>` : ""}
-          ${c.show_title !== false && events.length > 0 ? `<div class="sg-count">${events.length}</div>` : ""}
-        </div>` : ""}
+        ${c.show_header_icon || c.show_title !== false ? (() => {
+          const iconHtml = c.show_header_icon ? `<div class="sg-header-icon"><img src="/sportguiden/logos/card.png" alt="SportGuiden"></div>` : "";
+          const titleHtml = c.show_title !== false ? `<div class="sg-title">${title}</div>` : "";
+          const countHtml = c.show_title !== false && events.length > 0 ? `<div class="sg-count">${events.length}</div>` : "";
+          const align = c.header_icon_align || "left";
+          if (align === "center") {
+            return `<div class="sg-header">${iconHtml}<div class="sg-header-row">${titleHtml}${countHtml}</div></div>`;
+          } else if (align === "right") {
+            return `<div class="sg-header"><div class="sg-header-row">${titleHtml}${countHtml}</div>${iconHtml}</div>`;
+          } else {
+            return `<div class="sg-header">${iconHtml}<div class="sg-header-row">${titleHtml}${countHtml}</div></div>`;
+          }
+        })() : ""}
         <ul class="sg-list">
           ${events.length === 0 ? `
             <div class="sg-empty">
@@ -739,12 +751,20 @@ class SportguidenCardEditor extends HTMLElement {
           <label>Storlek på logga (px)</label>
           <input id="header_icon_size" type="number" min="24" max="200" value="${this._config.header_icon_size || 80}">
         </div>
+        <div class="row">
+          <label>Logga position</label>
+          <select id="header_icon_align">
+            <option value="left"   ${(this._config.header_icon_align || "left") === "left"   ? "selected" : ""}>Vänster</option>
+            <option value="center" ${(this._config.header_icon_align || "left") === "center" ? "selected" : ""}>Centrerad</option>
+            <option value="right"  ${(this._config.header_icon_align || "left") === "right"  ? "selected" : ""}>Höger</option>
+          </select>
+        </div>
         <div class="checkbox-row"><input id="compact" type="checkbox" ${this._config.compact ? "checked" : ""}><label>Kompakt läge</label></div>
       </div>
     `;
 
     // Simple field listeners
-    ["entity","title","max_items","header_icon_size","background","accent_color","accent_color_2","card_bg_color","text_color"].forEach((field) => {
+    ["entity","title","max_items","header_icon_size","header_icon_align","background","accent_color","accent_color_2","card_bg_color","text_color"].forEach((field) => {
       const el = this.shadowRoot.getElementById(field);
       if (el) el.addEventListener("change", (e) => { this._config = {...this._config, [field]: e.target.value}; this._dispatch(); });
     });

@@ -30,136 +30,119 @@ _HEADERS = {
 
 
 def parse_events(html: str, today_str: str) -> list[dict]:
-    """Parse sport events from tv.nu HTML (same logic as the standalone scraper)."""
+    """Parse sport events from tv.nu HTML.
+
+    tv.nu renders two sections for today:
+      - Card view  (class landscapeCard): title + time, NO channel info
+      - List view  (class _2sEf9):        title + time + ALL channels
+
+    We parse list-view links only so we always get channel data.
+    Card-view links for the same event appear earlier in the HTML and would
+    shadow the list-view entries if processed first.
+    """
     events: list[dict] = []
     seen: set[str] = set()
 
-    # === Strategy 1: Card view ===
-    link_starts = [
-        m.start()
-        for m in re.finditer(
-            r'<a\s+href="/s/[sp]_\d+_' + today_str + r'"', html
-        )
-    ]
-
-    for start in link_starts:
-        block = html[start : start + 2500]
-        end_a = block.find("</a>")
-        if end_a > 0:
-            block = block[:end_a]
-
-        time_match = re.search(
-            r'class="_3wy1n"[^>]*>\s*(?:Idag\s+)?(\d{2}:\d{2})', block
-        )
-        time_str = time_match.group(1) if time_match else ""
-
-        league_match = re.search(r'class="_3P__M"[^>]*>\s*([^<]+)', block)
-        subtitle = _html.unescape(league_match.group(1).strip()) if league_match else ""
-
-        title_match = re.search(r'class="_3C8FT"[^>]*>\s*([^<]+)', block)
-        title = _html.unescape(title_match.group(1).strip()) if title_match else ""
-
-        if not title:
-            aria_match = re.search(
-                r'aria-label="Link\s*-\s*(\d{2}:\d{2}),\s*(.+?)"', block
-            )
-            if aria_match:
-                if not time_str:
-                    time_str = aria_match.group(1)
-                title = _html.unescape(aria_match.group(2).strip())
-
-        if not title:
-            continue
-
-        league = ""
-        sport = ""
-        if subtitle:
-            sub_match = re.match(r"(.+?)\s*\([HD]\)\s*,?\s*(\w+.*)", subtitle)
-            if sub_match:
-                league = sub_match.group(1).strip()
-                sport = sub_match.group(2).strip()
-            else:
-                sport = subtitle
-
-        channel = ""
-        chan_match = re.search(
-            r"(?:SVT|TV4|Viaplay|Discovery\+|Eurosport|C More|Max|DAZN|Sportkanalen|TV3|TV6|TV8|Kanal 5|Kanal 9|ESPN|V Sport|Cmore)[^<]*",
-            block,
-            re.IGNORECASE,
-        )
-        if chan_match:
-            channel = _html.unescape(chan_match.group(0).strip())
-
-        key = f"{time_str}_{title}".lower()
-        if key in seen:
-            continue
-        seen.add(key)
-
-        events.append(
-            {
-                "time": time_str,
-                "title": title,
-                "subtitle": subtitle,
-                "league": league,
-                "sport": sport,
-                "channel": channel,
-            }
-        )
-
-    # === Strategy 2: List view (aria-label) ===
-    aria_links = re.finditer(
-        r'<a[^>]+href="/s/[sp]_\d+_'
-        + today_str
-        + r'"[^>]*aria-label="Link\s*-\s*(\d{2}:\d{2}),\s*([^"]+)"',
-        html,
+    # Find all list-view event links (_2sEf9 class) for today
+    link_re = re.compile(
+        r'<a\s[^>]*href="/s/[sp]_\d+_' + today_str + r'"[^>]*>'
     )
 
-    for m in aria_links:
-        time_str = m.group(1)
-        title = _html.unescape(m.group(2).strip())
-
-        if not title or " - " not in title:
+    for m in link_re.finditer(html):
+        tag = m.group(0)
+        # Skip card-view (landscapeCard) – they have no channel info and will be
+        # duplicated by the list-view entry below.
+        if "landscapeCard" in tag:
             continue
+
+        start = m.start()
+        end = html.find("</a>", start)
+        if end < 0:
+            continue
+        block = html[start : end + 4]
+
+        # ── Time ──────────────────────────────────────────────────────────────
+        time_str = ""
+        t = re.search(r'<time[^>]*>(\d{2}:\d{2})', block)
+        if t:
+            time_str = t.group(1)
+        if not time_str:
+            t = re.search(r'aria-label="Link\s*-\s*(\d{2}:\d{2})', block)
+            if t:
+                time_str = t.group(1)
+
+        # ── Title ─────────────────────────────────────────────────────────────
+        title = ""
+        for cls in ("_2WKUG", "_3C8FT"):
+            t = re.search(rf'class="{cls}"[^>]*>\s*([^<]+)', block)
+            if t:
+                title = _html.unescape(t.group(1).strip())
+                break
+        if not title:
+            t = re.search(r'aria-label="Link\s*-\s*\d{2}:\d{2},\s*([^"]+)"', block)
+            if t:
+                title = _html.unescape(t.group(1).strip())
+        if not title:
+            continue
+
+        # ── Channels ──────────────────────────────────────────────────────────
+        # Channel names are text nodes wrapped in React comment markers: <!-- -->Name<!-- -->
+        # Each channel airing gets its own _3O72C / _2kIHd block.
+        raw_channels = re.findall(r'<!--\s*-->\s*([^<\n]+?)\s*<!--\s*-->', block)
+        channel_names = list(dict.fromkeys(  # deduplicate, preserve order
+            _html.unescape(c.strip()) for c in raw_channels if c.strip()
+        ))
+        channel = " & ".join(channel_names)
+
+        # ── League / sport ────────────────────────────────────────────────────
+        subtitle = ""
+        league = ""
+        sport = ""
+
+        # List view: text sits after the empty _2HFK6 div
+        lm = re.search(r'class="_2HFK6"[^>]*></div>\s*([^<]+)', block)
+        if lm:
+            subtitle = _html.unescape(lm.group(1).strip())
+        else:
+            # Card view fallback
+            lm = re.search(r'class="_3P__M"[^>]*>\s*([^<]+)', block)
+            if lm:
+                subtitle = _html.unescape(lm.group(1).strip())
+
+        if subtitle:
+            parts = [p.strip() for p in subtitle.split(",")]
+            sport_words = {
+                "fotboll", "ishockey", "tennis", "motorsport", "golf",
+                "basket", "handboll", "cykling", "vintersport", "simning",
+                "friidrott", "rugby", "boxning", "atletik",
+            }
+            if parts[0].lower() in sport_words:
+                # List-view format: "Sport, League (D/H), Round"
+                sport = parts[0]
+                if len(parts) > 1:
+                    league = re.sub(r"\s*\([DH]\)\s*$", "", parts[1]).strip()
+            else:
+                # Card-view format: "League (D/H), sport"
+                sub_m = re.match(r"(.+?)\s*\([HD]\)\s*,?\s*(\w+.*)", subtitle)
+                if sub_m:
+                    league = sub_m.group(1).strip()
+                    sport = sub_m.group(2).strip()
+                else:
+                    sport = subtitle
 
         key = f"{time_str}_{title}".lower()
         if key in seen:
             continue
         seen.add(key)
 
-        block = html[m.start() : m.start() + 2000]
-        channel = ""
-        chan_patterns = [
-            r">\s*(SVT[^<]*?)(?:\s*<!--|\s*<)",
-            r">\s*(TV4[^<]*?)(?:\s*<!--|\s*<)",
-            r">\s*(Viaplay[^<]*?)(?:\s*<!--|\s*<)",
-            r">\s*(Discovery\+[^<]*?)(?:\s*<!--|\s*<)",
-            r">\s*(Eurosport[^<]*?)(?:\s*<!--|\s*<)",
-            r">\s*(C More[^<]*?)(?:\s*<!--|\s*<)",
-            r">\s*(Max[^<]*?)(?:\s*<!--|\s*<)",
-            r">\s*(DAZN[^<]*?)(?:\s*<!--|\s*<)",
-            r">\s*(V Sport[^<]*?)(?:\s*<!--|\s*<)",
-            r">\s*(TV3[^<]*?)(?:\s*<!--|\s*<)",
-            r">\s*(TV6[^<]*?)(?:\s*<!--|\s*<)",
-            r">\s*(Sportkanalen[^<]*?)(?:\s*<!--|\s*<)",
-            r">\s*(SVT Play[^<]*?)(?:\s*<!--|\s*<)",
-            r">\s*(TV4 Play[^<]*?)(?:\s*<!--|\s*<)",
-        ]
-        for pat in chan_patterns:
-            chan_m = re.search(pat, block, re.IGNORECASE)
-            if chan_m:
-                channel = _html.unescape(chan_m.group(1).strip())
-                break
-
-        events.append(
-            {
-                "time": time_str,
-                "title": title,
-                "subtitle": "",
-                "league": "",
-                "sport": "",
-                "channel": channel,
-            }
-        )
+        events.append({
+            "time": time_str,
+            "title": title,
+            "subtitle": subtitle,
+            "league": league,
+            "sport": sport,
+            "channel": channel,
+        })
 
     events.sort(key=lambda e: e.get("time") or "99:99")
     return events
