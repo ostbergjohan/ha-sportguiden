@@ -10,7 +10,7 @@
 
 console.log("SportGuiden: card JS loaded");
 
-const SPORTGUIDEN_VERSION = "2.14.0";
+const SPORTGUIDEN_VERSION = "2.15.0";
 
 const LOGOS_BASE = "/sportguiden/logos";
 const _LOGO_MAP = [
@@ -415,15 +415,16 @@ class SportguidenCard extends HTMLElement {
         .sg-empty-icon { font-size: 2.5em; margin-bottom: 8px; }
       </style>
       <div class="sg-card">
+        ${c.show_header_icon || c.show_title !== false ? `
         <div class="sg-header">
           ${c.show_header_icon ? `
             <div class="sg-header-icon">
               <img src="/sportguiden/logos/card.png" alt="SportGuiden">
             </div>
           ` : ""}
-          <div class="sg-title">${title}</div>
-          ${events.length > 0 ? `<div class="sg-count">${events.length}</div>` : ""}
-        </div>
+          ${c.show_title !== false ? `<div class="sg-title">${title}</div>` : ""}
+          ${c.show_title !== false && events.length > 0 ? `<div class="sg-count">${events.length}</div>` : ""}
+        </div>` : ""}
         <ul class="sg-list">
           ${events.length === 0 ? `
             <div class="sg-empty">
@@ -728,6 +729,7 @@ class SportguidenCardEditor extends HTMLElement {
           <input id="text_color" type="color" value="${this._config.text_color || "#ffffff"}">
         </div>
         <h3>Visa / Dölj</h3>
+        <div class="checkbox-row"><input id="show_title" type="checkbox" ${this._config.show_title !== false ? "checked" : ""}><label>Visa rubrik</label></div>
         <div class="checkbox-row"><input id="show_time" type="checkbox" ${this._config.show_time !== false ? "checked" : ""}><label>Visa tid</label></div>
         <div class="checkbox-row"><input id="show_channel_logo" type="checkbox" ${this._config.show_channel_logo !== false ? "checked" : ""}><label>Visa kanallogga</label></div>
         <div class="checkbox-row"><input id="show_channel_name" type="checkbox" ${this._config.show_channel_name !== false ? "checked" : ""}><label>Visa kanalnamn</label></div>
@@ -746,7 +748,7 @@ class SportguidenCardEditor extends HTMLElement {
       const el = this.shadowRoot.getElementById(field);
       if (el) el.addEventListener("change", (e) => { this._config = {...this._config, [field]: e.target.value}; this._dispatch(); });
     });
-    ["show_time","show_channel_logo","show_channel_name","show_league","show_header_icon","compact"].forEach((field) => {
+    ["show_title","show_time","show_channel_logo","show_channel_name","show_league","show_header_icon","compact"].forEach((field) => {
       const el = this.shadowRoot.getElementById(field);
       if (el) el.addEventListener("change", (e) => { this._config = {...this._config, [field]: e.target.checked}; this._dispatch(); });
     });
