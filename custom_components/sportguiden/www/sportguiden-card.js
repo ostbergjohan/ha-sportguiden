@@ -70,6 +70,7 @@ class SportguidenCard extends HTMLElement {
       max_items: 0,
       source: "",  // source ID from config (e.g. "fotboll", "champions_league"). Empty = all_events
       channels: [],  // filter: only show these channels (empty = show all). E.g. ["Viaplay", "TV4 Play"]
+      leagues: [],  // filter: only show these leagues/tournaments (empty = show all). E.g. ["Champions League", "Allsvenskan"]
       ...config,
     };
   }
@@ -132,6 +133,17 @@ class SportguidenCard extends HTMLElement {
       events = events.filter(ev => {
         const ch = (ev.channel || "").toLowerCase();
         return ch && filterLower.some(f => ch.includes(f));
+      });
+    }
+
+    // Filter by leagues/tournaments if configured
+    const leagueFilter = this._config.leagues || [];
+    if (leagueFilter.length > 0) {
+      const filterLower = leagueFilter.map(l => l.toLowerCase());
+      events = events.filter(ev => {
+        const league = (ev.league || "").toLowerCase();
+        const subtitle = (ev.subtitle || "").toLowerCase();
+        return filterLower.some(f => league.includes(f) || subtitle.includes(f));
       });
     }
 
@@ -597,6 +609,9 @@ class SportguidenCardEditor extends HTMLElement {
           <label>Header-ikon (lämna tomt för auto)</label>
           <input id="header_icon" type="text" value="${this._config.header_icon || ""}">
         </div>
+        <h3>Ligafilter</h3>
+        <div class="hint" style="margin-bottom:8px;">Kryssa i ligor/turneringar. Tomma = visa alla.</div>
+        ${this._renderLeagueCheckboxes()}
         <h3>Kanalfilter</h3>
         <div class="hint" style="margin-bottom:8px;">Kryssa i kanaler du vill visa. Tomma = visa alla.</div>
         ${this._renderChannelCheckboxes()}
@@ -644,6 +659,44 @@ class SportguidenCardEditor extends HTMLElement {
         this._dispatch();
       });
     });
+
+    // League filter checkboxes
+    const leagueBoxes = this.shadowRoot.querySelectorAll(".league-filter-cb");
+    leagueBoxes.forEach((cb) => {
+      cb.addEventListener("change", () => {
+        const checked = [...this.shadowRoot.querySelectorAll(".league-filter-cb:checked")].map(el => el.value);
+        this._config = {...this._config, leagues: checked};
+        this._dispatch();
+      });
+    });
+  }
+
+  _renderLeagueCheckboxes() {
+    // Dynamically get leagues from the current sensor data
+    let leagues = new Set();
+    if (this._hass && this._config.entity && this._hass.states[this._config.entity]) {
+      const attr = this._hass.states[this._config.entity].attributes || {};
+      let events = [];
+      if (attr.sources && this._config.source) {
+        const src = attr.sources[this._config.source];
+        if (src && src.events) events = src.events;
+      } else if (attr.all_events) {
+        events = attr.all_events;
+      }
+      events.forEach(ev => {
+        if (ev.league) leagues.add(ev.league);
+        else if (ev.subtitle) leagues.add(ev.subtitle);
+      });
+    }
+    const sorted = [...leagues].sort();
+    const selected = this._config.leagues || [];
+    if (sorted.length === 0) {
+      return `<div class="hint">Inga ligor hittades i datan ännu.</div>`;
+    }
+    return sorted.map(lg => {
+      const checked = selected.includes(lg) ? "checked" : "";
+      return `<div class="checkbox-row"><input type="checkbox" class="league-filter-cb" value="${lg}" ${checked}><label>${lg}</label></div>`;
+    }).join("");
   }
 
   _renderChannelCheckboxes() {
