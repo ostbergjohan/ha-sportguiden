@@ -21,7 +21,7 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 _CARD_URL = f"/{DOMAIN}/sportguiden-card.js"
 _LOGOS_URL = f"/{DOMAIN}/logos"
-_CARD_VERSION = "5"
+_CARD_VERSION = "6"
 
 
 # ─── Frontend helpers ──────────────────────────────────────────────

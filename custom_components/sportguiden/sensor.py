@@ -37,7 +37,7 @@ class SportguidenSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         self._entry = entry
         self._attr_unique_id = f"{DOMAIN}_{entry.entry_id}"
-        self._attr_name = "SportGuiden"
+        self._attr_name = None
         self._attr_icon = "mdi:trophy"
 
     @property

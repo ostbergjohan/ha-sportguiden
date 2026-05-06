@@ -10,7 +10,7 @@
 
 console.log("SportGuiden: card JS loaded");
 
-const SPORTGUIDEN_VERSION = "2.2.0";
+const SPORTGUIDEN_VERSION = "2.3.0";
 
 class SportguidenCard extends HTMLElement {
   constructor() {
@@ -24,9 +24,12 @@ class SportguidenCard extends HTMLElement {
     return document.createElement("sportguiden-card-editor");
   }
 
-  static getStubConfig() {
+  static getStubConfig(hass) {
+    const entity = hass
+      ? (Object.keys(hass.states).find(e => e.startsWith("sensor.sportguiden")) || "")
+      : "";
     return {
-      entity: "sensor.sportguiden",
+      entity,
       title: "🏆 Sport på TV idag",
       accent_color: "#667eea",
       background: "gradient",
