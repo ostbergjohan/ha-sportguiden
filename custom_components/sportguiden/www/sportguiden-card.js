@@ -1,25 +1,16 @@
 /**
  * SportGuiden - Home Assistant Card
  * ══════════════════════════════════
- * Visar dagens sport på TV/streaming med kanaler, ligor och tider.
- * Hämtar data från en command_line sensor som skrapar tv.nu.
+ * Shows today's live sport on TV/streaming (tv.nu)
  *
  * YAML Config:
  *   type: custom:sportguiden-card
- *   entity: sensor.sportguiden_fotboll     # or any sportguiden sensor
- *   title: "⚽ Fotboll idag"
- *   accent_color: "#4CAF50"
- *   background: "gradient"                 # gradient | glass | solid | none
- *   card_bg_color: "#0f1923"
- *   text_color: "#ffffff"
- *   show_channel: true
- *   show_league: true
- *   show_time: true
- *   compact: false
- *   max_items: 0                           # 0 = show all
+ *   entity: sensor.sportguiden
  */
 
-const SPORTGUIDEN_VERSION = "1.0.0";
+console.log("SportGuiden: card JS loaded");
+
+const SPORTGUIDEN_VERSION = "2.0.0";
 
 class SportguidenCard extends HTMLElement {
   constructor() {
@@ -714,17 +705,27 @@ class SportguidenCardEditor extends HTMLElement {
 }
 
 // ─── Register ──────────────────────────────────────────────────────
-customElements.define("sportguiden-card", SportguidenCard);
-customElements.define("sportguiden-card-editor", SportguidenCardEditor);
+try {
+  if (!customElements.get("sportguiden-card")) {
+    customElements.define("sportguiden-card", SportguidenCard);
+  }
+  if (!customElements.get("sportguiden-card-editor")) {
+    customElements.define("sportguiden-card-editor", SportguidenCardEditor);
+  }
+} catch (err) {
+  console.error("SportGuiden: failed to register custom elements:", err);
+}
 
 window.customCards = window.customCards || [];
-window.customCards.push({
-  type: "sportguiden-card",
-  name: "SportGuiden",
-  description: "Visar dagens sport på TV och streaming med kanaler, ligor och tider (tv.nu)",
-  preview: true,
-  documentationURL: "https://github.com/ostbergjohan/ha-sportguiden",
-});
+if (!window.customCards.find(c => c.type === "sportguiden-card")) {
+  window.customCards.push({
+    type: "sportguiden-card",
+    name: "SportGuiden",
+    description: "Shows today's live sport on TV and streaming (tv.nu)",
+    preview: true,
+    documentationURL: "https://github.com/ostbergjohan/ha-sportguiden",
+  });
+}
 
 console.info(
   `%c SPORTGUIDEN %c v${SPORTGUIDEN_VERSION} `,

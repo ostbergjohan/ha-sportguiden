@@ -20,7 +20,7 @@ _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 _CARD_URL = f"/{DOMAIN}/sportguiden-card.js"
-_CARD_VERSION = "2"
+_CARD_VERSION = "3"
 
 
 # ─── Frontend helpers ──────────────────────────────────────────────
