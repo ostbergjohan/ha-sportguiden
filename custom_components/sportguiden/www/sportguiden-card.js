@@ -10,7 +10,7 @@
 
 console.log("SportGuiden: card JS loaded");
 
-const SPORTGUIDEN_VERSION = "2.0.0";
+const SPORTGUIDEN_VERSION = "2.2.0";
 
 class SportguidenCard extends HTMLElement {
   constructor() {
@@ -177,28 +177,32 @@ class SportguidenCard extends HTMLElement {
     const title = c.title === "🏆 Sport på TV idag" && this._autoTitle ? this._autoTitle : c.title;
     const headerIcon = c.header_icon === "mdi:television-classic" && this._autoIcon ? this._autoIcon : c.header_icon;
 
+    const LOGOS_BASE = "/sportguiden/logos";
     const channelLogos = {
-      "svt1": "https://img.tv.nu/img-tvnu/channellogos/svt1.svg",
-      "svt2": "https://img.tv.nu/img-tvnu/channellogos/svt2.svg",
-      "svt play": "https://img.tv.nu/img-tvnu/channellogos/svtplay.svg",
-      "tv4": "https://img.tv.nu/img-tvnu/channellogos/tv4.svg",
-      "tv4 play": "https://img.tv.nu/img-tvnu/channellogos/tv4play.svg",
-      "tv4 sport": "https://img.tv.nu/img-tvnu/channellogos/tv4sport.svg",
-      "viaplay": "https://img.tv.nu/img-tvnu/channellogos/viaplay.svg",
-      "v sport 1": "https://img.tv.nu/img-tvnu/channellogos/vsport1.svg",
-      "v sport 2": "https://img.tv.nu/img-tvnu/channellogos/vsport2.svg",
-      "v sport fotboll": "https://img.tv.nu/img-tvnu/channellogos/vsportfotboll.svg",
-      "v sport hockey": "https://img.tv.nu/img-tvnu/channellogos/vsporthockey.svg",
-      "eurosport 1": "https://img.tv.nu/img-tvnu/channellogos/eurosport.svg",
-      "eurosport 2": "https://img.tv.nu/img-tvnu/channellogos/eurosport2.svg",
-      "discovery+": "https://img.tv.nu/img-tvnu/channellogos/discoveryplus.svg",
-      "c more": "https://img.tv.nu/img-tvnu/channellogos/cmore.svg",
-      "tv3": "https://img.tv.nu/img-tvnu/channellogos/tv3.svg",
-      "tv6": "https://img.tv.nu/img-tvnu/channellogos/tv6.svg",
-      "tv8": "https://img.tv.nu/img-tvnu/channellogos/tv8.svg",
-      "max": "https://img.tv.nu/img-tvnu/channellogos/max.svg",
-      "dazn": "https://img.tv.nu/img-tvnu/channellogos/dazn.svg",
-      "sportkanalen": "https://img.tv.nu/img-tvnu/channellogos/sportkanalen.svg",
+      "svt1":            `${LOGOS_BASE}/svt1.png`,
+      "svt2":            `${LOGOS_BASE}/svt2.png`,
+      "tv4":             `${LOGOS_BASE}/tv4.png`,
+      "tv4 sport":       `${LOGOS_BASE}/tv4sport.png`,
+      "tv4 sport live":  `${LOGOS_BASE}/tv4sport.png`,
+      "viaplay":         `${LOGOS_BASE}/viaplay.png`,
+      "v sport 1":       `${LOGOS_BASE}/vsport1.png`,
+      "v sport 2":       `${LOGOS_BASE}/vsport2.png`,
+      "v sport fotboll": `${LOGOS_BASE}/vsportfotboll.png`,
+      "v sport football":`${LOGOS_BASE}/vsportfotboll.png`,
+      "tv3":             `${LOGOS_BASE}/tv3.png`,
+      "tv6":             `${LOGOS_BASE}/tv6.png`,
+      "tv8":             `${LOGOS_BASE}/tv8.png`,
+      "sportkanalen":    `${LOGOS_BASE}/sportkanalen.png`,
+    };
+    const channelFallbackColors = {
+      "svt play":   { bg: "#006AB3", text: "#fff" },
+      "tv4 play":   { bg: "#E31E24", text: "#fff" },
+      "eurosport 1":{ bg: "#003DA5", text: "#fff" },
+      "eurosport 2":{ bg: "#003DA5", text: "#fff" },
+      "discovery+": { bg: "#2175D9", text: "#fff" },
+      "c more":     { bg: "#F5821F", text: "#fff" },
+      "max":        { bg: "#5822E9", text: "#fff" },
+      "dazn":       { bg: "#111",    text: "#F5F500" },
     };
 
     const leagueColors = {
@@ -332,30 +336,29 @@ class SportguidenCard extends HTMLElement {
         }
         .sg-channel-logo {
           flex-shrink: 0;
-          width: 32px; height: 32px;
-          border-radius: 8px;
-          background: rgba(255,255,255,0.9);
+          width: 36px; height: 36px;
+          border-radius: 6px;
+          background: #fff;
           display: flex; align-items: center; justify-content: center;
+          padding: 3px;
           overflow: hidden;
-          padding: 4px;
         }
         .sg-channel-logo img {
           width: 100%; height: 100%;
           object-fit: contain;
         }
-        .sg-channel-text {
+        .sg-channel-badge {
           flex-shrink: 0;
-          font-size: 0.65em;
-          font-weight: 600;
-          padding: 3px 7px;
+          font-size: 0.62em;
+          font-weight: 700;
+          padding: 3px 8px;
           border-radius: 6px;
-          background: rgba(255,255,255,0.12);
-          color: rgba(255,255,255,0.8);
-          max-width: 70px;
+          max-width: 80px;
           text-align: center;
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          letter-spacing: 0.01em;
         }
         .sg-info {
           flex: 1;
@@ -399,12 +402,6 @@ class SportguidenCard extends HTMLElement {
           opacity: 0.6;
         }
         .sg-empty-icon { font-size: 2.5em; margin-bottom: 8px; }
-        .sg-footer {
-          margin-top: 12px;
-          text-align: right;
-          font-size: 0.65em;
-          opacity: 0.3;
-        }
       </style>
       <div class="sg-card">
         <div class="sg-header">
@@ -424,7 +421,6 @@ class SportguidenCard extends HTMLElement {
             </div>
           ` : events.map((ev) => this._renderEvent(ev, channelLogos, leagueColors, sportIcons)).join("")}
         </ul>
-        <div class="sg-footer">SportGuiden · tv.nu</div>
       </div>
     `;
   }
@@ -440,11 +436,15 @@ class SportguidenCard extends HTMLElement {
     // Channel display
     let channelHtml = "";
     if (c.show_channel && channel) {
-      const logoUrl = channelLogos[channel.toLowerCase()];
+      const key = channel.toLowerCase();
+      const logoUrl = channelLogos[key];
       if (logoUrl) {
         channelHtml = `<div class="sg-channel-logo"><img src="${logoUrl}" alt="${this._escapeHtml(channel)}" loading="lazy"></div>`;
       } else {
-        channelHtml = `<div class="sg-channel-text">${this._escapeHtml(channel)}</div>`;
+        const fb = channelFallbackColors[key];
+        const bg = fb ? fb.bg : "rgba(255,255,255,0.12)";
+        const fg = fb ? fb.text : "rgba(255,255,255,0.85)";
+        channelHtml = `<div class="sg-channel-badge" style="background:${bg};color:${fg};">${this._escapeHtml(channel)}</div>`;
       }
     }
 

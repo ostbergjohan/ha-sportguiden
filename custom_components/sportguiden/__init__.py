@@ -20,7 +20,8 @@ _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 _CARD_URL = f"/{DOMAIN}/sportguiden-card.js"
-_CARD_VERSION = "3"
+_LOGOS_URL = f"/{DOMAIN}/logos"
+_CARD_VERSION = "5"
 
 
 # ─── Frontend helpers ──────────────────────────────────────────────
@@ -37,13 +38,18 @@ async def _register_card(hass: HomeAssistant) -> None:
     try:
         from homeassistant.components.http import StaticPathConfig
 
+        logos_dir = str(www_dir / "logos")
         await hass.http.async_register_static_paths(
-            [StaticPathConfig(_CARD_URL, js_path, True)]
+            [
+                StaticPathConfig(_CARD_URL, js_path, True),
+                StaticPathConfig(_LOGOS_URL, logos_dir, True),
+            ]
         )
         registered = True
     except (ImportError, AttributeError):
         try:
             hass.http.register_static_path(_CARD_URL, js_path, True)
+            hass.http.register_static_path(_LOGOS_URL, logos_dir, True)
             registered = True
         except Exception as err:  # noqa: BLE001
             _LOGGER.error("SportGuiden: failed to register static path (legacy): %s", err)
