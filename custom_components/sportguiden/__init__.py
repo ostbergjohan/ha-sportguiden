@@ -11,6 +11,7 @@ from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.event import async_track_time_change
 
 from .const import DOMAIN, AVAILABLE_SOURCES
 from .coordinator import SportguidenCoordinator
@@ -21,7 +22,7 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 _CARD_URL = f"/{DOMAIN}/sportguiden-card.js"
 _LOGOS_URL = f"/{DOMAIN}/logos"
-_CARD_VERSION = "10"
+_CARD_VERSION = "14"
 
 
 # ─── Frontend helpers ──────────────────────────────────────────────
@@ -124,6 +125,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN][entry.entry_id] = {
         "coordinator": coordinator,
     }
+
+    # Nightly refresh at 04:00 – tv.nu schedule is ready by then
+    async def _nightly_refresh(_now=None) -> None:
+        await coordinator.async_refresh()
+
+    entry.async_on_unload(
+        async_track_time_change(hass, _nightly_refresh, hour=4, minute=0, second=0)
+    )
 
     # Set up sensor platform
     await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])

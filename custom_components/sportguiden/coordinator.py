@@ -1,6 +1,7 @@
 """Data coordinator for SportGuiden – fetches sport events from tv.nu."""
 from __future__ import annotations
 
+import html as _html
 import logging
 import re
 from datetime import date, timedelta
@@ -53,10 +54,10 @@ def parse_events(html: str, today_str: str) -> list[dict]:
         time_str = time_match.group(1) if time_match else ""
 
         league_match = re.search(r'class="_3P__M"[^>]*>\s*([^<]+)', block)
-        subtitle = league_match.group(1).strip() if league_match else ""
+        subtitle = _html.unescape(league_match.group(1).strip()) if league_match else ""
 
         title_match = re.search(r'class="_3C8FT"[^>]*>\s*([^<]+)', block)
-        title = title_match.group(1).strip() if title_match else ""
+        title = _html.unescape(title_match.group(1).strip()) if title_match else ""
 
         if not title:
             aria_match = re.search(
@@ -65,7 +66,7 @@ def parse_events(html: str, today_str: str) -> list[dict]:
             if aria_match:
                 if not time_str:
                     time_str = aria_match.group(1)
-                title = aria_match.group(2).strip()
+                title = _html.unescape(aria_match.group(2).strip())
 
         if not title:
             continue
@@ -87,7 +88,7 @@ def parse_events(html: str, today_str: str) -> list[dict]:
             re.IGNORECASE,
         )
         if chan_match:
-            channel = chan_match.group(0).strip()
+            channel = _html.unescape(chan_match.group(0).strip())
 
         key = f"{time_str}_{title}".lower()
         if key in seen:
@@ -146,7 +147,7 @@ def parse_events(html: str, today_str: str) -> list[dict]:
         for pat in chan_patterns:
             chan_m = re.search(pat, block, re.IGNORECASE)
             if chan_m:
-                channel = chan_m.group(1).strip()
+                channel = _html.unescape(chan_m.group(1).strip())
                 break
 
         events.append(

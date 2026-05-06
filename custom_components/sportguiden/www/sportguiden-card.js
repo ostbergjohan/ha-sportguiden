@@ -10,7 +10,7 @@
 
 console.log("SportGuiden: card JS loaded");
 
-const SPORTGUIDEN_VERSION = "2.7.0";
+const SPORTGUIDEN_VERSION = "2.11.0";
 
 const LOGOS_BASE = "/sportguiden/logos";
 const _LOGO_MAP = [
@@ -112,6 +112,9 @@ class SportguidenCard extends HTMLElement {
     if (!config.entity) {
       throw new Error("Du måste ange entity (t.ex. sensor.sportguiden)");
     }
+    // Backward compat: convert old single `source` string to `sources` array
+    const { source: _legacySource, ...restConfig } = config;
+    const sources = config.sources || (_legacySource ? [_legacySource] : []);
     this._config = {
       title: "🏆 Sport på TV idag",
       accent_color: "#667eea",
@@ -126,10 +129,12 @@ class SportguidenCard extends HTMLElement {
       header_icon: "mdi:television-classic",
       compact: false,
       max_items: 0,
-      source: "",  // source ID from config (e.g. "fotboll", "champions_league"). Empty = all_events
-      channels: [],  // filter: only show these channels (empty = show all). E.g. ["Viaplay", "TV4 Play"]
-      leagues: [],  // filter: only show these leagues/tournaments (empty = show all). E.g. ["Champions League", "Allsvenskan"]
-      ...config,
+      header_icon_size: 80,
+      sources: [],
+      channels: [],
+      leagues: [],
+      ...restConfig,
+      sources,
     };
   }
 
@@ -146,24 +151,49 @@ class SportguidenCard extends HTMLElement {
     const attr = entity.attributes || {};
 
     try {
-      const sourceData = this._config.source ? (attr.sources || {})[this._config.source] : null;
+      const selectedSources = this._config.sources || [];
+      const sourcesMap = attr.sources || {};
 
-      if (sourceData && Array.isArray(sourceData.events) && sourceData.events.length > 0) {
-        events = sourceData.events;
-        this._autoTitle = sourceData.name || null;
-        this._autoIcon = sourceData.icon || null;
-        this._autoAccent = sourceData.accent_color || null;
-      } else if (attr.all_events && attr.all_events.length > 0) {
-        events = attr.all_events;
-      } else if (attr.events) {
-        events = attr.events;
-      } else if (attr.matches) {
-        events = attr.matches;
-      } else {
-        try {
-          const parsed = JSON.parse(entity.state);
-          events = parsed.events || parsed.matches || parsed.all_events || [];
-        } catch (e) {}
+      if (selectedSources.length > 0) {
+        const seen = new Set();
+        const merged = [];
+        for (const srcId of selectedSources) {
+          const srcData = sourcesMap[srcId];
+          if (srcData && Array.isArray(srcData.events)) {
+            for (const ev of srcData.events) {
+              const key = `${ev.time}_${ev.title}`.toLowerCase();
+              if (!seen.has(key)) { seen.add(key); merged.push(ev); }
+            }
+          }
+        }
+        if (merged.length > 0) {
+          events = merged.sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+          if (selectedSources.length === 1 && sourcesMap[selectedSources[0]]) {
+            const sd = sourcesMap[selectedSources[0]];
+            this._autoTitle = sd.name || null;
+            this._autoIcon = sd.icon || null;
+            this._autoAccent = sd.accent_color || null;
+          } else {
+            this._autoTitle = null;
+            this._autoIcon = null;
+            this._autoAccent = null;
+          }
+        }
+      }
+
+      if (events.length === 0) {
+        if (attr.all_events && attr.all_events.length > 0) {
+          events = attr.all_events;
+        } else if (attr.events) {
+          events = attr.events;
+        } else if (attr.matches) {
+          events = attr.matches;
+        } else {
+          try {
+            const parsed = JSON.parse(entity.state);
+            events = parsed.events || parsed.matches || parsed.all_events || [];
+          } catch (e) {}
+        }
       }
     } catch (e) {}
 
@@ -256,7 +286,7 @@ class SportguidenCard extends HTMLElement {
           margin-bottom: ${c.compact ? "12px" : "20px"};
         }
         .sg-header-icon {
-          width: 64px; height: 64px;
+          width: ${c.header_icon_size || 80}px; height: ${c.header_icon_size || 80}px;
           border-radius: 12px;
           display: flex; align-items: center; justify-content: center;
           flex-shrink: 0;
@@ -353,9 +383,7 @@ class SportguidenCard extends HTMLElement {
           font-size: ${c.compact ? "0.88em" : "0.95em"};
           font-weight: 600;
           line-height: 1.3;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          word-break: break-word;
         }
         .sg-meta {
           display: flex;
@@ -408,15 +436,19 @@ class SportguidenCard extends HTMLElement {
   }
 
   _getChannelLogo(ch) {
-    const k = ch.toLowerCase().trim();
-    for (const [keys, url] of _LOGO_MAP) {
-      if (keys.some(key => k.includes(key))) return url;
+    const parts = ch.split(/\s*[&,/]\s*/).map(s => s.trim()).filter(Boolean);
+    for (const part of parts) {
+      const k = part.toLowerCase();
+      for (const [keys, url] of _LOGO_MAP) {
+        if (keys.some(key => k.includes(key))) return url;
+      }
     }
     return null;
   }
 
   _getChannelFallback(ch) {
-    const k = ch.toLowerCase().trim();
+    const firstPart = ch.split(/\s*[&,/]\s*/)[0].trim();
+    const k = firstPart.toLowerCase();
     for (const [key, val] of Object.entries(_CHANNEL_FALLBACK)) {
       if (k.includes(key)) return val;
     }
@@ -530,14 +562,21 @@ class SportguidenCardEditor extends HTMLElement {
       { id: "tennis",     name: "Tennis" },
       { id: "motorsport", name: "Motorsport" },
       { id: "vintersport",name: "Vintersport" },
+      { id: "golf",       name: "Golf" },
+      { id: "basket",     name: "Basket" },
+      { id: "handboll",   name: "Handboll" },
+      { id: "cykling",    name: "Cykling" },
+      { id: "ovrigt",    name: "Övrig sport" },
     ];
 
     const allChannels = ["SVT1","SVT2","SVT Play","TV4","TV4 Play","TV4 Sport","Viaplay","V Sport 1","V Sport 2","V Sport Fotboll","Eurosport 1","Eurosport 2","Discovery+","C More","Max","DAZN","TV3","TV6","TV8","Sportkanalen"];
 
     const leagues = this._getLeaguesFromData();
+    const selSources = this._config.sources || [];
     const selLeagues = this._config.leagues || [];
     const selChannels = this._config.channels || [];
 
+    const sourceTrigger = selSources.length === 0 ? "Alla sporter" : `${selSources.length} valda`;
     const leagueTrigger = selLeagues.length === 0 ? "Alla ligor" : `${selLeagues.length} valda`;
     const channelTrigger = selChannels.length === 0 ? "Alla kanaler" : `${selChannels.length} valda`;
 
@@ -601,11 +640,18 @@ class SportguidenCardEditor extends HTMLElement {
           </select>
         </div>
         <div class="row">
-          <label>Sportkategori</label>
-          <select id="source">
-            <option value="" ${!this._config.source ? "selected" : ""}>Alla sporter</option>
-            ${allSportSources.map((s) => `<option value="${s.id}" ${s.id === this._config.source ? "selected" : ""}>${s.name}</option>`).join("")}
-          </select>
+          <label>Sportkategori <span style="opacity:.5;font-weight:400">(tomt = visa alla)</span></label>
+          <div class="ms-wrap" id="source-wrap">
+            <div class="ms-trigger" id="source-trigger">${sourceTrigger} <span>▾</span></div>
+            <div class="ms-dropdown" id="source-dropdown" style="display:none">
+              <div class="ms-options" id="source-options">
+                ${allSportSources.map(s => `<label class="ms-option"><input type="checkbox" class="source-cb" value="${s.id}" ${selSources.includes(s.id) ? "checked" : ""}><span>${s.name}</span></label>`).join("")}
+              </div>
+              <div class="ms-footer">
+                <button id="source-clear">Rensa alla</button>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="row">
           <label>Rubrik</label>
@@ -678,12 +724,16 @@ class SportguidenCardEditor extends HTMLElement {
         <div class="checkbox-row"><input id="show_channel" type="checkbox" ${this._config.show_channel !== false ? "checked" : ""}><label>Visa kanal</label></div>
         <div class="checkbox-row"><input id="show_league" type="checkbox" ${this._config.show_league !== false ? "checked" : ""}><label>Visa liga/turnering</label></div>
         <div class="checkbox-row"><input id="show_header_icon" type="checkbox" ${this._config.show_header_icon !== false ? "checked" : ""}><label>Visa header-ikon</label></div>
+        <div class="row">
+          <label>Storlek på logga (px)</label>
+          <input id="header_icon_size" type="number" min="24" max="200" value="${this._config.header_icon_size || 80}">
+        </div>
         <div class="checkbox-row"><input id="compact" type="checkbox" ${this._config.compact ? "checked" : ""}><label>Kompakt läge</label></div>
       </div>
     `;
 
     // Simple field listeners
-    ["entity","source","title","max_items","background","accent_color","accent_color_2","card_bg_color","text_color"].forEach((field) => {
+    ["entity","title","max_items","header_icon_size","background","accent_color","accent_color_2","card_bg_color","text_color"].forEach((field) => {
       const el = this.shadowRoot.getElementById(field);
       if (el) el.addEventListener("change", (e) => { this._config = {...this._config, [field]: e.target.value}; this._dispatch(); });
     });
@@ -691,6 +741,12 @@ class SportguidenCardEditor extends HTMLElement {
       const el = this.shadowRoot.getElementById(field);
       if (el) el.addEventListener("change", (e) => { this._config = {...this._config, [field]: e.target.checked}; this._dispatch(); });
     });
+
+    // Multi-select: sport sources
+    this._setupMultiSelect(
+      "source-trigger", "source-dropdown", null, "source-options", "source-cb", "source-clear",
+      (vals) => { this._config = {...this._config, sources: vals}; this._dispatch(); this._updateTrigger("source-trigger", vals, "sporter"); }
+    );
 
     // Multi-select: leagues
     this._setupMultiSelect(
@@ -716,6 +772,9 @@ class SportguidenCardEditor extends HTMLElement {
       sr.querySelectorAll(".ms-dropdown").forEach(d => d.style.display = "none");
       dropdown.style.display = isOpen ? "none" : "block";
     });
+
+    // Stop clicks inside dropdown from bubbling to document (which would close it immediately)
+    dropdown.addEventListener("click", (e) => { e.stopPropagation(); });
 
     document.addEventListener("click", () => { dropdown.style.display = "none"; }, { once: false });
 
