@@ -10,7 +10,7 @@
 
 console.log("SportGuiden: card JS loaded");
 
-const SPORTGUIDEN_VERSION = "2.16.0";
+const SPORTGUIDEN_VERSION = "2.17.0";
 
 const LOGOS_BASE = "/sportguiden/logos";
 const _LOGO_MAP = [
@@ -269,7 +269,7 @@ class SportguidenCard extends HTMLElement {
         .sg-card {
           ${bg}
           border-radius: 16px;
-          padding: ${c.compact ? "16px" : "24px"};
+          padding: ${c.compact ? "10px 12px" : "10px 16px"};
           color: ${textColor};
           font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
           position: relative;
@@ -291,7 +291,7 @@ class SportguidenCard extends HTMLElement {
             ? "flex-direction: column; align-items: center; text-align: center;"
             : "align-items: center;"}
           gap: 8px;
-          margin-bottom: ${c.compact ? "8px" : "14px"};
+          margin-bottom: ${c.compact ? "6px" : "10px"};
         }
         .sg-header-row {
           display: flex;
