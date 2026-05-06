@@ -12,7 +12,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 
-from .const import DOMAIN, CONF_SOURCES, AVAILABLE_SOURCES
+from .const import DOMAIN, AVAILABLE_SOURCES
 from .coordinator import SportguidenCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 _CARD_URL = f"/{DOMAIN}/sportguiden-card.js"
 _LOGOS_URL = f"/{DOMAIN}/logos"
-_CARD_VERSION = "6"
+_CARD_VERSION = "9"
 
 
 # ─── Frontend helpers ──────────────────────────────────────────────
@@ -117,15 +117,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             pass
         hass.data[DOMAIN]["_cards_done"] = True
 
-    # Determine which sources to scrape
-    source_ids = entry.data.get(CONF_SOURCES, ["all"])
-    source_map = {s["id"]: s for s in AVAILABLE_SOURCES}
-    sources = [source_map[sid] for sid in source_ids if sid in source_map]
-    if not sources:
-        sources = [source_map["all"]]
-
-    # Create coordinator
-    coordinator = SportguidenCoordinator(hass, sources)
+    # Always fetch all available sources
+    coordinator = SportguidenCoordinator(hass, AVAILABLE_SOURCES)
     await coordinator.async_config_entry_first_refresh()
 
     hass.data[DOMAIN][entry.entry_id] = {

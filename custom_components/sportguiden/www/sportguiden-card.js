@@ -10,7 +10,7 @@
 
 console.log("SportGuiden: card JS loaded");
 
-const SPORTGUIDEN_VERSION = "2.3.0";
+const SPORTGUIDEN_VERSION = "2.6.0";
 
 class SportguidenCard extends HTMLElement {
   constructor() {
@@ -82,37 +82,20 @@ class SportguidenCard extends HTMLElement {
     const attr = entity.attributes || {};
 
     try {
-      // Config mode: sensor has "sources" attribute with keyed data
-      if (attr.sources && this._config.source) {
-        const sourceData = attr.sources[this._config.source];
-        if (sourceData && sourceData.events) {
-          events = sourceData.events;
-          // Auto-set title/icon from source config if not overridden
-          if (!this._config._titleOverridden && sourceData.name) {
-            this._autoTitle = sourceData.name;
-          }
-          if (!this._config._iconOverridden && sourceData.icon) {
-            this._autoIcon = sourceData.icon;
-          }
-          if (!this._config._accentOverridden && sourceData.accent_color) {
-            this._autoAccent = sourceData.accent_color;
-          }
-        }
-      }
-      // Config mode: show all events if no source specified
-      else if (attr.all_events) {
+      const sourceData = this._config.source ? (attr.sources || {})[this._config.source] : null;
+
+      if (sourceData && Array.isArray(sourceData.events) && sourceData.events.length > 0) {
+        events = sourceData.events;
+        this._autoTitle = sourceData.name || null;
+        this._autoIcon = sourceData.icon || null;
+        this._autoAccent = sourceData.accent_color || null;
+      } else if (attr.all_events && attr.all_events.length > 0) {
         events = attr.all_events;
-      }
-      // Single-sensor mode: events directly in attributes
-      else if (attr.events) {
+      } else if (attr.events) {
         events = attr.events;
-      }
-      // Legacy/fallback
-      else if (attr.matches) {
+      } else if (attr.matches) {
         events = attr.matches;
-      }
-      // Try parsing state as JSON
-      else {
+      } else {
         try {
           const parsed = JSON.parse(entity.state);
           events = parsed.events || parsed.matches || parsed.all_events || [];
@@ -177,35 +160,48 @@ class SportguidenCard extends HTMLElement {
     const textColor = c.text_color || "#ffffff";
     const accent = this._autoAccent || c.accent_color || "#667eea";
     const accent2 = c.accent_color_2 || "#764ba2";
-    const title = c.title === "🏆 Sport på TV idag" && this._autoTitle ? this._autoTitle : c.title;
-    const headerIcon = c.header_icon === "mdi:television-classic" && this._autoIcon ? this._autoIcon : c.header_icon;
+    const title = c.title || this._autoTitle || "Sport på TV idag";
+    const headerIcon = c.header_icon || this._autoIcon || "mdi:television-classic";
 
     const LOGOS_BASE = "/sportguiden/logos";
-    const channelLogos = {
-      "svt1":            `${LOGOS_BASE}/svt1.png`,
-      "svt2":            `${LOGOS_BASE}/svt2.png`,
-      "tv4":             `${LOGOS_BASE}/tv4.png`,
-      "tv4 sport":       `${LOGOS_BASE}/tv4sport.png`,
-      "tv4 sport live":  `${LOGOS_BASE}/tv4sport.png`,
-      "viaplay":         `${LOGOS_BASE}/viaplay.png`,
-      "v sport 1":       `${LOGOS_BASE}/vsport1.png`,
-      "v sport 2":       `${LOGOS_BASE}/vsport2.png`,
-      "v sport fotboll": `${LOGOS_BASE}/vsportfotboll.png`,
-      "v sport football":`${LOGOS_BASE}/vsportfotboll.png`,
-      "tv3":             `${LOGOS_BASE}/tv3.png`,
-      "tv6":             `${LOGOS_BASE}/tv6.png`,
-      "tv8":             `${LOGOS_BASE}/tv8.png`,
-      "sportkanalen":    `${LOGOS_BASE}/sportkanalen.png`,
+    const _logoMap = [
+      [["svt1"],                          `${LOGOS_BASE}/svt1.png`],
+      [["svt2"],                          `${LOGOS_BASE}/svt2.png`],
+      [["tv4 sport","tv4sport","sportkanalen tv4"], `${LOGOS_BASE}/tv4sport.png`],
+      [["tv4"],                           `${LOGOS_BASE}/tv4.png`],
+      [["viaplay"],                       `${LOGOS_BASE}/viaplay.png`],
+      [["v sport 1","vsport1","v sport premium"], `${LOGOS_BASE}/vsport1.png`],
+      [["v sport 2","vsport2"],           `${LOGOS_BASE}/vsport2.png`],
+      [["v sport fotboll","v sport football","vsport fotboll"], `${LOGOS_BASE}/vsportfotboll.png`],
+      [["tv3"],                           `${LOGOS_BASE}/tv3.png`],
+      [["tv6"],                           `${LOGOS_BASE}/tv6.png`],
+      [["tv8"],                           `${LOGOS_BASE}/tv8.png`],
+      [["sportkanalen"],                  `${LOGOS_BASE}/sportkanalen.png`],
+    ];
+    const _getChannelLogo = (ch) => {
+      const k = ch.toLowerCase().trim();
+      for (const [keys, url] of _logoMap) {
+        if (keys.some(key => k.includes(key))) return url;
+      }
+      return null;
     };
     const channelFallbackColors = {
+      "svt":        { bg: "#006AB3", text: "#fff" },
       "svt play":   { bg: "#006AB3", text: "#fff" },
       "tv4 play":   { bg: "#E31E24", text: "#fff" },
-      "eurosport 1":{ bg: "#003DA5", text: "#fff" },
-      "eurosport 2":{ bg: "#003DA5", text: "#fff" },
+      "eurosport":  { bg: "#003DA5", text: "#fff" },
       "discovery+": { bg: "#2175D9", text: "#fff" },
       "c more":     { bg: "#F5821F", text: "#fff" },
       "max":        { bg: "#5822E9", text: "#fff" },
       "dazn":       { bg: "#111",    text: "#F5F500" },
+      "kanal 5":    { bg: "#e4a000", text: "#fff" },
+    };
+    const _getChannelFallback = (ch) => {
+      const k = ch.toLowerCase().trim();
+      for (const [key, val] of Object.entries(channelFallbackColors)) {
+        if (k.includes(key)) return val;
+      }
+      return { bg: "rgba(255,255,255,0.12)", text: "rgba(255,255,255,0.9)" };
     };
 
     const leagueColors = {
@@ -278,14 +274,13 @@ class SportguidenCard extends HTMLElement {
         .sg-header-icon {
           width: 42px; height: 42px;
           border-radius: 12px;
-          background: linear-gradient(135deg, ${accent}, ${accent2});
           display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 4px 12px ${accent}55;
           flex-shrink: 0;
+          overflow: hidden;
         }
-        .sg-header-icon ha-icon {
-          --mdc-icon-size: 22px;
-          color: #fff;
+        .sg-header-icon img {
+          width: 100%; height: 100%;
+          object-fit: contain;
         }
         .sg-title {
           font-size: ${c.compact ? "1.1em" : "1.3em"};
@@ -410,7 +405,7 @@ class SportguidenCard extends HTMLElement {
         <div class="sg-header">
           ${c.show_header_icon ? `
             <div class="sg-header-icon">
-              <ha-icon icon="${headerIcon}"></ha-icon>
+              <img src="/sportguiden/logos/card.png" alt="SportGuiden">
             </div>
           ` : ""}
           <div class="sg-title">${title}</div>
@@ -439,15 +434,12 @@ class SportguidenCard extends HTMLElement {
     // Channel display
     let channelHtml = "";
     if (c.show_channel && channel) {
-      const key = channel.toLowerCase();
-      const logoUrl = channelLogos[key];
+      const logoUrl = _getChannelLogo(channel);
       if (logoUrl) {
         channelHtml = `<div class="sg-channel-logo"><img src="${logoUrl}" alt="${this._escapeHtml(channel)}" loading="lazy"></div>`;
       } else {
-        const fb = channelFallbackColors[key];
-        const bg = fb ? fb.bg : "rgba(255,255,255,0.12)";
-        const fg = fb ? fb.text : "rgba(255,255,255,0.85)";
-        channelHtml = `<div class="sg-channel-badge" style="background:${bg};color:${fg};">${this._escapeHtml(channel)}</div>`;
+        const fb = _getChannelFallback(channel);
+        channelHtml = `<div class="sg-channel-badge" style="background:${fb.bg};color:${fb.text};">${this._escapeHtml(channel)}</div>`;
       }
     }
 
@@ -532,22 +524,73 @@ class SportguidenCardEditor extends HTMLElement {
       .filter((e) => e.startsWith("sensor.sportguiden"))
       .sort();
 
-    // Try to get configured sources from the selected entity
-    let availableSources = [];
-    if (this._config.entity && this._hass.states[this._config.entity]) {
-      const attr = this._hass.states[this._config.entity].attributes || {};
-      availableSources = attr.configured_sources || [];
-    }
+    const allSportSources = [
+      { id: "fotboll",    name: "Fotboll" },
+      { id: "ishockey",   name: "Ishockey" },
+      { id: "tennis",     name: "Tennis" },
+      { id: "motorsport", name: "Motorsport" },
+      { id: "vintersport",name: "Vintersport" },
+    ];
+
+    const allChannels = ["SVT1","SVT2","SVT Play","TV4","TV4 Play","TV4 Sport","Viaplay","V Sport 1","V Sport 2","V Sport Fotboll","Eurosport 1","Eurosport 2","Discovery+","C More","Max","DAZN","TV3","TV6","TV8","Sportkanalen"];
+
+    const leagues = this._getLeaguesFromData();
+    const selLeagues = this._config.leagues || [];
+    const selChannels = this._config.channels || [];
+
+    const leagueTrigger = selLeagues.length === 0 ? "Alla ligor" : `${selLeagues.length} valda`;
+    const channelTrigger = selChannels.length === 0 ? "Alla kanaler" : `${selChannels.length} valda`;
 
     this.shadowRoot.innerHTML = `
       <style>
         .editor { display:flex; flex-direction:column; gap:12px; padding:12px; }
         .row { display:flex; flex-direction:column; gap:4px; }
         label { font-size:0.85em; font-weight:500; opacity:0.8; }
-        input, select { padding:8px 12px; border-radius:8px; border:1px solid var(--divider-color,#444); background:var(--card-background-color,#1a1a2e); color:var(--primary-text-color,#fff); font-size:0.95em; }
+        input[type=text], input[type=number], select {
+          padding:8px 12px; border-radius:8px;
+          border:1px solid var(--divider-color,#444);
+          background:var(--card-background-color,#1a1a2e);
+          color:var(--primary-text-color,#fff); font-size:0.95em; width:100%; box-sizing:border-box;
+        }
         .checkbox-row { display:flex; align-items:center; gap:8px; }
         h3 { margin:8px 0 4px; font-size:0.9em; opacity:0.6; text-transform:uppercase; letter-spacing:0.05em; }
         .hint { font-size:0.75em; opacity:0.5; margin-top:2px; }
+        .ms-wrap { position:relative; }
+        .ms-trigger {
+          padding:8px 12px; border-radius:8px; cursor:pointer;
+          border:1px solid var(--divider-color,#444);
+          background:var(--card-background-color,#1a1a2e);
+          color:var(--primary-text-color,#fff); font-size:0.95em;
+          display:flex; justify-content:space-between; align-items:center; user-select:none;
+        }
+        .ms-trigger:hover { border-color: var(--primary-color,#667eea); }
+        .ms-dropdown {
+          position:absolute; z-index:999; top:calc(100% + 4px); left:0; right:0;
+          background:var(--card-background-color,#1e1e2e);
+          border:1px solid var(--divider-color,#444); border-radius:8px;
+          box-shadow:0 8px 24px rgba(0,0,0,0.4); overflow:hidden;
+        }
+        .ms-search input {
+          border:none; border-bottom:1px solid var(--divider-color,#444);
+          border-radius:0; padding:8px 12px; width:100%; box-sizing:border-box;
+        }
+        .ms-options { max-height:200px; overflow-y:auto; padding:4px 0; }
+        .ms-option {
+          display:flex; align-items:center; gap:8px;
+          padding:6px 12px; cursor:pointer; font-size:0.9em;
+        }
+        .ms-option:hover { background:rgba(255,255,255,0.06); }
+        .ms-option input { width:auto; padding:0; }
+        .ms-footer {
+          display:flex; gap:8px; padding:6px 12px;
+          border-top:1px solid var(--divider-color,#444);
+        }
+        .ms-footer button {
+          flex:1; padding:5px 0; border:none; border-radius:6px; cursor:pointer;
+          font-size:0.8em; font-weight:600;
+          background:rgba(255,255,255,0.08); color:var(--primary-text-color,#fff);
+        }
+        .ms-footer button:hover { background:rgba(255,255,255,0.14); }
       </style>
       <div class="editor">
         <div class="row">
@@ -558,20 +601,51 @@ class SportguidenCardEditor extends HTMLElement {
           </select>
         </div>
         <div class="row">
-          <label>Sportkälla (från config)</label>
+          <label>Sportkategori</label>
           <select id="source">
-            <option value="" ${!this._config.source ? "selected" : ""}>Alla (alla konfigurerade)</option>
-            ${availableSources.map((s) => `<option value="${s.id}" ${s.id === this._config.source ? "selected" : ""}>${s.name}</option>`).join("")}
+            <option value="" ${!this._config.source ? "selected" : ""}>Alla sporter</option>
+            ${allSportSources.map((s) => `<option value="${s.id}" ${s.id === this._config.source ? "selected" : ""}>${s.name}</option>`).join("")}
           </select>
-          <div class="hint">Välj vilken sport/liga som kortet visar. Konfigureras via integrationen.</div>
         </div>
         <div class="row">
-          <label>Rubrik (lämna tomt för auto från källa)</label>
+          <label>Rubrik</label>
           <input id="title" type="text" value="${this._config.title || ""}">
         </div>
         <div class="row">
           <label>Max antal (0 = visa alla)</label>
-          <input id="max_items" type="number" min="0" max="50" value="${this._config.max_items || 0}">
+          <input id="max_items" type="number" min="0" max="100" value="${this._config.max_items || 0}">
+        </div>
+        <h3>Filter</h3>
+        <div class="row">
+          <label>Ligafilter <span style="opacity:.5;font-weight:400">(tomt = visa alla)</span></label>
+          <div class="ms-wrap" id="league-wrap">
+            <div class="ms-trigger" id="league-trigger">${leagueTrigger} <span>▾</span></div>
+            <div class="ms-dropdown" id="league-dropdown" style="display:none">
+              <div class="ms-search"><input type="text" placeholder="Sök liga…" id="league-search"></div>
+              <div class="ms-options" id="league-options">
+                ${leagues.length === 0
+                  ? `<div style="padding:8px 12px;opacity:.5;font-size:.85em">Inga ligor i datan ännu</div>`
+                  : leagues.map(lg => `<label class="ms-option"><input type="checkbox" class="league-cb" value="${lg}" ${selLeagues.includes(lg) ? "checked" : ""}><span>${lg}</span></label>`).join("")}
+              </div>
+              <div class="ms-footer">
+                <button id="league-clear">Rensa alla</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <label>Kanalfilter <span style="opacity:.5;font-weight:400">(tomt = visa alla)</span></label>
+          <div class="ms-wrap" id="channel-wrap">
+            <div class="ms-trigger" id="channel-trigger">${channelTrigger} <span>▾</span></div>
+            <div class="ms-dropdown" id="channel-dropdown" style="display:none">
+              <div class="ms-options" id="channel-options">
+                ${allChannels.map(ch => `<label class="ms-option"><input type="checkbox" class="channel-cb" value="${ch}" ${selChannels.includes(ch) ? "checked" : ""}><span>${ch}</span></label>`).join("")}
+              </div>
+              <div class="ms-footer">
+                <button id="channel-clear">Rensa alla</button>
+              </div>
+            </div>
+          </div>
         </div>
         <h3>Utseende</h3>
         <div class="row">
@@ -584,7 +658,7 @@ class SportguidenCardEditor extends HTMLElement {
           </select>
         </div>
         <div class="row">
-          <label>Accent-färg (lämna standard för auto)</label>
+          <label>Accent-färg</label>
           <input id="accent_color" type="color" value="${this._config.accent_color || "#667eea"}">
         </div>
         <div class="row">
@@ -599,107 +673,95 @@ class SportguidenCardEditor extends HTMLElement {
           <label>Textfärg</label>
           <input id="text_color" type="color" value="${this._config.text_color || "#ffffff"}">
         </div>
-        <div class="row">
-          <label>Header-ikon (lämna tomt för auto)</label>
-          <input id="header_icon" type="text" value="${this._config.header_icon || ""}">
-        </div>
-        <h3>Ligafilter</h3>
-        <div class="hint" style="margin-bottom:8px;">Kryssa i ligor/turneringar. Tomma = visa alla.</div>
-        ${this._renderLeagueCheckboxes()}
-        <h3>Kanalfilter</h3>
-        <div class="hint" style="margin-bottom:8px;">Kryssa i kanaler du vill visa. Tomma = visa alla.</div>
-        ${this._renderChannelCheckboxes()}
         <h3>Visa / Dölj</h3>
-        <div class="checkbox-row">
-          <input id="show_time" type="checkbox" ${this._config.show_time !== false ? "checked" : ""}>
-          <label>Visa tid</label>
-        </div>
-        <div class="checkbox-row">
-          <input id="show_channel" type="checkbox" ${this._config.show_channel !== false ? "checked" : ""}>
-          <label>Visa kanal</label>
-        </div>
-        <div class="checkbox-row">
-          <input id="show_league" type="checkbox" ${this._config.show_league !== false ? "checked" : ""}>
-          <label>Visa liga/turnering</label>
-        </div>
-        <div class="checkbox-row">
-          <input id="show_header_icon" type="checkbox" ${this._config.show_header_icon !== false ? "checked" : ""}>
-          <label>Visa header-ikon</label>
-        </div>
-        <div class="checkbox-row">
-          <input id="compact" type="checkbox" ${this._config.compact ? "checked" : ""}>
-          <label>Kompakt läge</label>
-        </div>
+        <div class="checkbox-row"><input id="show_time" type="checkbox" ${this._config.show_time !== false ? "checked" : ""}><label>Visa tid</label></div>
+        <div class="checkbox-row"><input id="show_channel" type="checkbox" ${this._config.show_channel !== false ? "checked" : ""}><label>Visa kanal</label></div>
+        <div class="checkbox-row"><input id="show_league" type="checkbox" ${this._config.show_league !== false ? "checked" : ""}><label>Visa liga/turnering</label></div>
+        <div class="checkbox-row"><input id="show_header_icon" type="checkbox" ${this._config.show_header_icon !== false ? "checked" : ""}><label>Visa header-ikon</label></div>
+        <div class="checkbox-row"><input id="compact" type="checkbox" ${this._config.compact ? "checked" : ""}><label>Kompakt läge</label></div>
       </div>
     `;
 
-    const fields = ["entity","source","title","max_items","background","accent_color","accent_color_2","card_bg_color","text_color","header_icon"];
-    fields.forEach((field) => {
+    // Simple field listeners
+    ["entity","source","title","max_items","background","accent_color","accent_color_2","card_bg_color","text_color"].forEach((field) => {
       const el = this.shadowRoot.getElementById(field);
       if (el) el.addEventListener("change", (e) => { this._config = {...this._config, [field]: e.target.value}; this._dispatch(); });
     });
-    const checkboxes = ["show_time","show_channel","show_league","show_header_icon","compact"];
-    checkboxes.forEach((field) => {
+    ["show_time","show_channel","show_league","show_header_icon","compact"].forEach((field) => {
       const el = this.shadowRoot.getElementById(field);
       if (el) el.addEventListener("change", (e) => { this._config = {...this._config, [field]: e.target.checked}; this._dispatch(); });
     });
 
-    // Channel filter checkboxes
-    const channelBoxes = this.shadowRoot.querySelectorAll(".channel-filter-cb");
-    channelBoxes.forEach((cb) => {
-      cb.addEventListener("change", () => {
-        const checked = [...this.shadowRoot.querySelectorAll(".channel-filter-cb:checked")].map(el => el.value);
-        this._config = {...this._config, channels: checked};
-        this._dispatch();
-      });
-    });
+    // Multi-select: leagues
+    this._setupMultiSelect(
+      "league-trigger", "league-dropdown", "league-search", "league-options", "league-cb", "league-clear",
+      (vals) => { this._config = {...this._config, leagues: vals}; this._dispatch(); this._updateTrigger("league-trigger", vals, "ligor"); }
+    );
 
-    // League filter checkboxes
-    const leagueBoxes = this.shadowRoot.querySelectorAll(".league-filter-cb");
-    leagueBoxes.forEach((cb) => {
-      cb.addEventListener("change", () => {
-        const checked = [...this.shadowRoot.querySelectorAll(".league-filter-cb:checked")].map(el => el.value);
-        this._config = {...this._config, leagues: checked};
-        this._dispatch();
-      });
-    });
+    // Multi-select: channels
+    this._setupMultiSelect(
+      "channel-trigger", "channel-dropdown", null, "channel-options", "channel-cb", "channel-clear",
+      (vals) => { this._config = {...this._config, channels: vals}; this._dispatch(); this._updateTrigger("channel-trigger", vals, "kanaler"); }
+    );
   }
 
-  _renderLeagueCheckboxes() {
-    // Dynamically get leagues from the current sensor data
-    let leagues = new Set();
-    if (this._hass && this._config.entity && this._hass.states[this._config.entity]) {
-      const attr = this._hass.states[this._config.entity].attributes || {};
-      let events = [];
-      if (attr.sources && this._config.source) {
-        const src = attr.sources[this._config.source];
-        if (src && src.events) events = src.events;
-      } else if (attr.all_events) {
-        events = attr.all_events;
+  _setupMultiSelect(triggerId, dropdownId, searchId, optionsId, cbClass, clearId, onChange) {
+    const sr = this.shadowRoot;
+    const trigger = sr.getElementById(triggerId);
+    const dropdown = sr.getElementById(dropdownId);
+
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = dropdown.style.display !== "none";
+      sr.querySelectorAll(".ms-dropdown").forEach(d => d.style.display = "none");
+      dropdown.style.display = isOpen ? "none" : "block";
+    });
+
+    document.addEventListener("click", () => { dropdown.style.display = "none"; }, { once: false });
+
+    const getVals = () => [...sr.querySelectorAll(`.${cbClass}:checked`)].map(el => el.value);
+
+    sr.querySelectorAll(`.${cbClass}`).forEach(cb => {
+      cb.addEventListener("change", () => onChange(getVals()));
+    });
+
+    const clearBtn = sr.getElementById(clearId);
+    if (clearBtn) clearBtn.addEventListener("click", () => {
+      sr.querySelectorAll(`.${cbClass}`).forEach(cb => cb.checked = false);
+      onChange([]);
+    });
+
+    if (searchId) {
+      const searchEl = sr.getElementById(searchId);
+      const optionsEl = sr.getElementById(optionsId);
+      if (searchEl && optionsEl) {
+        searchEl.addEventListener("input", (e) => {
+          const q = e.target.value.toLowerCase();
+          optionsEl.querySelectorAll(".ms-option").forEach(opt => {
+            opt.style.display = opt.textContent.toLowerCase().includes(q) ? "" : "none";
+          });
+        });
       }
-      events.forEach(ev => {
-        if (ev.league) leagues.add(ev.league);
-        else if (ev.subtitle) leagues.add(ev.subtitle);
-      });
     }
-    const sorted = [...leagues].sort();
-    const selected = this._config.leagues || [];
-    if (sorted.length === 0) {
-      return `<div class="hint">Inga ligor hittades i datan ännu.</div>`;
-    }
-    return sorted.map(lg => {
-      const checked = selected.includes(lg) ? "checked" : "";
-      return `<div class="checkbox-row"><input type="checkbox" class="league-filter-cb" value="${lg}" ${checked}><label>${lg}</label></div>`;
-    }).join("");
   }
 
-  _renderChannelCheckboxes() {
-    const allChannels = ["SVT1", "SVT2", "SVT Play", "TV4", "TV4 Play", "Viaplay", "V Sport 1", "V Sport 2", "V Sport Football", "V Sport Hockey", "Eurosport 1", "Eurosport 2", "Discovery+", "C More", "Max", "DAZN", "TV3", "TV6", "Sportkanalen"];
-    const selected = this._config.channels || [];
-    return allChannels.map(ch => {
-      const checked = selected.includes(ch) ? "checked" : "";
-      return `<div class="checkbox-row"><input type="checkbox" class="channel-filter-cb" value="${ch}" ${checked}><label>${ch}</label></div>`;
-    }).join("");
+  _updateTrigger(triggerId, vals, noun) {
+    const trigger = this.shadowRoot.getElementById(triggerId);
+    if (trigger) trigger.innerHTML = (vals.length === 0 ? `Alla ${noun}` : `${vals.length} valda`) + " <span>▾</span>";
+  }
+
+  _getLeaguesFromData() {
+    const leagues = new Set();
+    if (!this._hass || !this._config.entity) return [];
+    const attr = (this._hass.states[this._config.entity] || {}).attributes || {};
+    let events = [];
+    if (attr.sources && this._config.source && attr.sources[this._config.source]) {
+      events = attr.sources[this._config.source].events || [];
+    } else if (attr.all_events) {
+      events = attr.all_events;
+    }
+    events.forEach(ev => { if (ev.league) leagues.add(ev.league); else if (ev.subtitle) leagues.add(ev.subtitle); });
+    return [...leagues].sort();
   }
 
   _dispatch() {
