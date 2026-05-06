@@ -705,30 +705,46 @@ class SportguidenCardEditor extends HTMLElement {
 }
 
 // ─── Register ──────────────────────────────────────────────────────
-try {
-  if (!customElements.get("sportguiden-card")) {
-    customElements.define("sportguiden-card", SportguidenCard);
-  }
-  if (!customElements.get("sportguiden-card-editor")) {
-    customElements.define("sportguiden-card-editor", SportguidenCardEditor);
-  }
-} catch (err) {
-  console.error("SportGuiden: failed to register custom elements:", err);
-}
+// ─── Register elements ────────────────────────────────────────────
+(function() {
+  function registerCards() {
+    try {
+      if (!customElements.get("sportguiden-card")) {
+        customElements.define("sportguiden-card", SportguidenCard);
+      }
+      if (!customElements.get("sportguiden-card-editor")) {
+        customElements.define("sportguiden-card-editor", SportguidenCardEditor);
+      }
+    } catch (err) {
+      console.error("SportGuiden: failed to register custom elements:", err);
+      return;
+    }
 
-window.customCards = window.customCards || [];
-if (!window.customCards.find(c => c.type === "sportguiden-card")) {
-  window.customCards.push({
-    type: "sportguiden-card",
-    name: "SportGuiden",
-    description: "Shows today's live sport on TV and streaming (tv.nu)",
-    preview: true,
-    documentationURL: "https://github.com/ostbergjohan/ha-sportguiden",
+    window.customCards = window.customCards || [];
+    if (!window.customCards.find(c => c.type === "sportguiden-card")) {
+      window.customCards.push({
+        type: "sportguiden-card",
+        name: "SportGuiden",
+        description: "Shows today's live sport on TV and streaming (tv.nu)",
+        preview: true,
+        documentationURL: "https://github.com/ostbergjohan/ha-sportguiden",
+      });
+    }
+
+    console.info(
+      `%c SPORTGUIDEN %c v${SPORTGUIDEN_VERSION} `,
+      "background: linear-gradient(135deg,#667eea,#764ba2); color: #fff; padding: 4px 8px; border-radius: 4px 0 0 4px; font-weight: 700;",
+      "background: #0f1923; color: #667eea; padding: 4px 8px; border-radius: 0 4px 4px 0;"
+    );
+  }
+
+  // Register immediately
+  registerCards();
+
+  // Re-register on HA frontend reconnect events
+  window.addEventListener("connection-status", function(e) {
+    if (e.detail === "connected") {
+      setTimeout(registerCards, 100);
+    }
   });
-}
-
-console.info(
-  `%c SPORTGUIDEN %c v${SPORTGUIDEN_VERSION} `,
-  "background: linear-gradient(135deg,#667eea,#764ba2); color: #fff; padding: 4px 8px; border-radius: 4px 0 0 4px; font-weight: 700;",
-  "background: #0f1923; color: #667eea; padding: 4px 8px; border-radius: 0 4px 4px 0;"
-);
+})();
