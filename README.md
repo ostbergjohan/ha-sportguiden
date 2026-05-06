@@ -2,217 +2,259 @@
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 
-Custom Home Assistant card that shows today's live sport on TV and streaming in Sweden (via [tv.nu](https://www.tv.nu/sport)). Supports multiple sports, leagues, and channels with a single sensor.
+Home Assistant-integration som visar dagens sport på TV och streaming i Sverige (via [tv.nu](https://www.tv.nu/sport)). Zero-config – installera, välj sporter, klart!
 
-## Features
+![SportGuiden](soccer-tv.png)
 
-- **Multi-source**: Configure football, hockey, tennis, Champions League, Allsvenskan, etc. — all in one config file
-- **One sensor, many cards**: A single HA sensor fetches all data; each card filters by source
-- **Channel logos**: Shows channel logos (SVT, TV4, Viaplay, Eurosport, Max, DAZN, etc.)
-- **Channel filter**: Pick which channels to show per card (checkboxes in the visual editor)
-- **League badges**: Color-coded badges for Champions League, Premier League, Allsvenskan, etc.
-- **Visual editor**: Full GUI — no YAML needed
-- **Themeable**: Gradient/glass/solid backgrounds, custom colors, compact mode
-- **Auto-config**: Title, icon, and accent color auto-populate from your source config
+## Funktioner
 
-## Screenshot
+- **Zero-config**: Installera via HACS → Lägg till integration → välj sporter → klart. Ingen YAML.
+- **Liga- & turneringsfilter**: Filtrera på Champions League, Allsvenskan, Premier League, SHL etc. direkt i kortet
+- **Kanalfilter**: Välj vilka kanaler som visas (SVT, TV4, Viaplay, Eurosport, Max, DAZN...)
+- **Flera kort, en sensor**: En integration hämtar all data – varje kort filtrerar efter sport, liga och kanal
+- **Kanallogotyper**: Visar riktiga logotyper för alla svenska sportkanaler
+- **Liga-badges**: Färgkodade badges för ligor och turneringar
+- **Visuell editor**: Komplett GUI – inga YAML-kunskaper krävs
+- **Teman**: Gradient/glas/enfärgad bakgrund, anpassade färger, kompakt läge
+- **Auto-config**: Titel, ikon och accentfärg sätts automatiskt från vald källa
 
-```
-┌──────────────────────────────────────────────┐
-│  [⚽]  Fotboll idag                      [7] │
-│                                              │
-│  ┌──────────────────────────────────────┐    │
-│  │ 18:30  [Viaplay]  Häcken - Djurgården│    │
-│  │                   DAMALLSVENSKAN      │    │
-│  ├──────────────────────────────────────┤    │
-│  │ 20:40  [TV4]     Brighton - Arsenal   │    │
-│  │                   PREMIER LEAGUE      │    │
-│  ├──────────────────────────────────────┤    │
-│  │ 21:00  [Viaplay]  Bayern - PSG        │    │
-│  │                   CHAMPIONS LEAGUE    │    │
-│  └──────────────────────────────────────┘    │
-│                          SportGuiden · tv.nu  │
-└──────────────────────────────────────────────┘
+## Hur kortet ser ut
+
+```html
+<div class="sg-card" style="background: linear-gradient(135deg, #0f1923, #1a2a3a); border-radius: 16px; padding: 24px; color: #fff;">
+  <!-- Header -->
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+    <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#4CAF50,#2E7D32);display:flex;align-items:center;justify-content:center;">⚽</div>
+    <span style="font-size:1.3em;font-weight:700;">Fotboll idag</span>
+    <span style="background:linear-gradient(135deg,#4CAF50,#2E7D32);color:#fff;padding:4px 10px;border-radius:20px;font-size:0.7em;font-weight:700;">5</span>
+  </div>
+
+  <!-- Event row -->
+  <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;background:rgba(255,255,255,0.05);margin-bottom:10px;">
+    <div style="color:#4CAF50;font-weight:700;min-width:44px;text-align:center;padding:4px 8px;border-radius:8px;background:rgba(76,175,80,0.1);">18:30</div>
+    <div style="width:32px;height:32px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;padding:4px;">
+      <img src="https://img.tv.nu/img-tvnu/channellogos/viaplay.svg" style="width:100%;height:100%;object-fit:contain;">
+    </div>
+    <div style="flex:1;">
+      <div style="font-weight:600;">Häcken - Djurgården</div>
+      <span style="font-size:0.65em;font-weight:600;padding:2px 7px;border-radius:8px;background:#002f6c;color:#fff;text-transform:uppercase;">ALLSVENSKAN</span>
+    </div>
+  </div>
+
+  <!-- Event row -->
+  <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;background:rgba(255,255,255,0.05);margin-bottom:10px;">
+    <div style="color:#4CAF50;font-weight:700;min-width:44px;text-align:center;padding:4px 8px;border-radius:8px;background:rgba(76,175,80,0.1);">20:45</div>
+    <div style="width:32px;height:32px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;padding:4px;">
+      <img src="https://img.tv.nu/img-tvnu/channellogos/tv4.svg" style="width:100%;height:100%;object-fit:contain;">
+    </div>
+    <div style="flex:1;">
+      <div style="font-weight:600;">Brighton - Arsenal</div>
+      <span style="font-size:0.65em;font-weight:600;padding:2px 7px;border-radius:8px;background:#38003c;color:#fff;text-transform:uppercase;">PREMIER LEAGUE</span>
+    </div>
+  </div>
+
+  <!-- Event row -->
+  <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;background:rgba(255,255,255,0.05);">
+    <div style="color:#4CAF50;font-weight:700;min-width:44px;text-align:center;padding:4px 8px;border-radius:8px;background:rgba(76,175,80,0.1);">21:00</div>
+    <div style="width:32px;height:32px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;padding:4px;">
+      <img src="https://img.tv.nu/img-tvnu/channellogos/viaplay.svg" style="width:100%;height:100%;object-fit:contain;">
+    </div>
+    <div style="flex:1;">
+      <div style="font-weight:600;">Bayern München - PSG</div>
+      <span style="font-size:0.65em;font-weight:600;padding:2px 7px;border-radius:8px;background:#1a237e;color:#fff;text-transform:uppercase;">CHAMPIONS LEAGUE</span>
+    </div>
+  </div>
+
+  <div style="margin-top:12px;text-align:right;font-size:0.65em;opacity:0.3;">SportGuiden · tv.nu</div>
+</div>
 ```
 
 ## Installation
 
-### HACS (recommended)
+### HACS (rekommenderat)
 
-1. Add this repository as a custom repository in HACS
-2. Install "SportGuiden"
-3. Add the resource and sensor config below
+1. Gå till HACS → Integrations → ⋮ → **Custom repositories**
+2. Lägg till `https://github.com/ostbergjohan/ha-sportguiden` som **Integration**
+3. Sök efter "SportGuiden" och klicka **Download**
+4. Starta om Home Assistant
+5. Gå till **Inställningar → Enheter & Tjänster → Lägg till integration → SportGuiden**
+6. Välj vilka sporter du vill bevaka (checkboxar) → Klicka Skicka
 
-### Manual
+Klart! Sensorn skapas automatiskt och Lovelace-kortet registreras.
 
-1. Copy `dist/sportguiden-card.js` to `/config/www/sportguiden-card.js`
-2. Copy `scripts/sportguiden_scraper.py` and `scripts/sportguiden_config.json` to `/config/scripts/`
-3. Add the resource in **Settings → Dashboards → Resources**:
-   ```
-   /local/sportguiden-card.js (JavaScript Module)
-   ```
+## Lägg till kort på dashboard
 
-## Configuration
+Gå till din dashboard → Redigera → Lägg till kort → **Custom: sportguiden-card**
 
-### 1. Configure sources (`sportguiden_config.json`)
-
-Edit this file to choose which sports/leagues to scrape:
-
-```json
-{
-  "sources": [
-    {
-      "id": "all",
-      "name": "All sport",
-      "url": "sport",
-      "icon": "mdi:trophy",
-      "accent_color": "#667eea"
-    },
-    {
-      "id": "fotboll",
-      "name": "Fotboll",
-      "url": "sport/fotboll",
-      "icon": "mdi:soccer",
-      "accent_color": "#4CAF50"
-    },
-    {
-      "id": "champions_league",
-      "name": "Champions League",
-      "url": "sport/fotboll/liga/champions-league",
-      "icon": "mdi:soccer",
-      "accent_color": "#1a237e"
-    },
-    {
-      "id": "allsvenskan",
-      "name": "Allsvenskan",
-      "url": "sport/fotboll/liga/allsvenskan",
-      "icon": "mdi:soccer",
-      "accent_color": "#002f6c"
-    },
-    {
-      "id": "ishockey",
-      "name": "Ishockey",
-      "url": "sport/ishockey",
-      "icon": "mdi:hockey-puck",
-      "accent_color": "#0288d1"
-    },
-    {
-      "id": "tennis",
-      "name": "Tennis",
-      "url": "sport/tennis",
-      "icon": "mdi:tennis",
-      "accent_color": "#00796b"
-    }
-  ]
-}
-```
-
-Available URL paths (from tv.nu):
-
-| Path | Description |
-|------|-------------|
-| `sport` | All sports |
-| `sport/fotboll` | All football |
-| `sport/fotboll/liga/allsvenskan` | Allsvenskan |
-| `sport/fotboll/liga/champions-league` | Champions League |
-| `sport/fotboll/liga/premier-league` | Premier League |
-| `sport/fotboll/liga/europa-league` | Europa League |
-| `sport/ishockey` | All ice hockey |
-| `sport/ishockey/liga/shl` | SHL |
-| `sport/tennis` | Tennis |
-| `sport/motorsport` | Motorsport |
-| `sport/vintersport` | Winter sports |
-
-### 2. Add sensor to `configuration.yaml`
+Enklaste konfigurationen:
 
 ```yaml
-command_line:
-  - sensor:
-      name: SportGuiden
-      unique_id: sportguiden
-      command: "python3 /config/scripts/sportguiden_scraper.py --config /config/scripts/sportguiden_config.json"
-      value_template: "{{ value_json.total_count }}"
-      json_attributes:
-        - sources
-        - all_events
-        - configured_sources
-        - date
-      scan_interval: 86400
+type: custom:sportguiden-card
+entity: sensor.sportguiden
 ```
 
-> **Note**: `scan_interval: 86400` means once per day (24h). You can also trigger updates at a specific time using an automation with `homeassistant.update_entity`.
+## Kortinställningar
 
-### 3. Add card to your dashboard
+| Option | Typ | Standard | Beskrivning |
+|--------|-----|----------|-------------|
+| `entity` | string | *krävs* | Sensor-entity |
+| `source` | string | `""` | Sportkälla (`fotboll`, `ishockey`, etc.). Tom = alla |
+| `leagues` | list | `[]` | Ligafilter. T.ex. `["Champions League", "Allsvenskan"]`. Tom = visa alla |
+| `channels` | list | `[]` | Kanalfilter. T.ex. `["Viaplay", "TV4"]`. Tom = visa alla |
+| `title` | string | Auto | Korttitel |
+| `max_items` | number | `0` | Max antal matcher (0 = alla) |
+| `background` | string | `gradient` | `gradient`, `glass`, `solid`, eller `none` |
+| `accent_color` | string | Auto | Primär accentfärg |
+| `accent_color_2` | string | `#764ba2` | Sekundär gradientfärg |
+| `card_bg_color` | string | `#0f1923` | Bakgrundsfärg |
+| `text_color` | string | `#ffffff` | Textfärg |
+| `header_icon` | string | Auto | MDI-ikon i headern |
+| `show_time` | boolean | `true` | Visa tid |
+| `show_channel` | boolean | `true` | Visa kanallogo |
+| `show_league` | boolean | `true` | Visa liga-badge |
+| `show_header_icon` | boolean | `true` | Visa header-ikon |
+| `compact` | boolean | `false` | Kompakt läge |
+
+## Exempel
+
+### Bara Champions League och Premier League på Viaplay
 
 ```yaml
 type: custom:sportguiden-card
 entity: sensor.sportguiden
 source: fotboll
-```
-
-That's it! The card auto-detects title, icon, and colors from your config.
-
-## Card Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `entity` | string | *required* | Sensor entity ID |
-| `source` | string | `""` | Source ID from config (`fotboll`, `champions_league`, etc.). Empty = all events |
-| `title` | string | Auto | Card title (auto-populated from source) |
-| `channels` | list | `[]` | Channel filter. E.g. `["Viaplay", "TV4 Play"]`. Empty = show all |
-| `max_items` | number | `0` | Max events to show (0 = all) |
-| `background` | string | `gradient` | `gradient`, `glass`, `solid`, or `none` |
-| `accent_color` | string | Auto | Primary accent color |
-| `accent_color_2` | string | `#764ba2` | Secondary gradient color |
-| `card_bg_color` | string | `#0f1923` | Background color |
-| `text_color` | string | `#ffffff` | Text color |
-| `header_icon` | string | Auto | MDI icon in header |
-| `show_time` | boolean | `true` | Show time column |
-| `show_channel` | boolean | `true` | Show channel logo/name |
-| `show_league` | boolean | `true` | Show league badge |
-| `show_header_icon` | boolean | `true` | Show header icon |
-| `compact` | boolean | `false` | Compact mode (smaller padding) |
-
-## Multiple cards example
-
-```yaml
-# Card 1: Football only, Viaplay channels
-type: custom:sportguiden-card
-entity: sensor.sportguiden
-source: fotboll
+title: "🏆 Europafotboll ikväll"
+leagues:
+  - Champions League
+  - Premier League
 channels:
   - Viaplay
+accent_color: "#1a237e"
+```
 
-# Card 2: All sport on SVT
+### All fotboll på SVT & TV4 (gratis-TV)
+
+```yaml
 type: custom:sportguiden-card
 entity: sensor.sportguiden
-source: all
-title: "Sport på SVT"
+source: fotboll
+title: "⚽ Fotboll på fri TV"
 channels:
   - SVT1
   - SVT2
   - SVT Play
-
-# Card 3: Champions League
-type: custom:sportguiden-card
-entity: sensor.sportguiden
-source: champions_league
+  - TV4
+  - TV4 Play
+accent_color: "#2e7d32"
 ```
 
-## Supported channels
+### Bara Allsvenskan
 
-SVT1, SVT2, SVT Play, TV4, TV4 Play, Viaplay, V Sport 1/2/Football/Hockey, Eurosport 1/2, Discovery+, C More, Max, DAZN, TV3, TV6, Sportkanalen
+```yaml
+type: custom:sportguiden-card
+entity: sensor.sportguiden
+source: fotboll
+leagues:
+  - Allsvenskan
+accent_color: "#002f6c"
+```
 
-## Requirements
+### Ishockey – SHL och NHL
+
+```yaml
+type: custom:sportguiden-card
+entity: sensor.sportguiden
+source: ishockey
+title: "🏒 Hockey ikväll"
+leagues:
+  - SHL
+  - NHL
+accent_color: "#0288d1"
+```
+
+### Tennis – bara Grand Slam
+
+```yaml
+type: custom:sportguiden-card
+entity: sensor.sportguiden
+source: tennis
+title: "🎾 Tennis"
+accent_color: "#00796b"
+```
+
+### All sport på Max & DAZN (streaming)
+
+```yaml
+type: custom:sportguiden-card
+entity: sensor.sportguiden
+title: "📺 Sport på streaming"
+channels:
+  - Max
+  - DAZN
+  - Discovery+
+  - Viaplay
+background: glass
+```
+
+### Motorsport – kompakt
+
+```yaml
+type: custom:sportguiden-card
+entity: sensor.sportguiden
+source: motorsport
+title: "🏎️ Motorsport"
+compact: true
+accent_color: "#d32f2f"
+```
+
+### Allt – max 5 matcher
+
+```yaml
+type: custom:sportguiden-card
+entity: sensor.sportguiden
+title: "🏆 Sport på TV idag"
+max_items: 5
+```
+
+## Tillgängliga sportkällor
+
+Dessa väljs i integrationens config flow (checkboxar):
+
+| Källa | Beskrivning |
+|-------|-------------|
+| All sport | Allt som visas på tv.nu/sport |
+| Fotboll | All fotboll |
+| Champions League | UEFA Champions League |
+| Premier League | Engelska ligan |
+| Allsvenskan | Svenska högstaligan |
+| Europa League | UEFA Europa League |
+| Ishockey | All ishockey |
+| SHL | Svenska Hockey Ligan |
+| Tennis | All tennis |
+| Motorsport | Formel 1, MotoGP, etc. |
+| Vintersport | Skidor, skidskytte, etc. |
+
+## Kanaler med logotyper
+
+SVT1, SVT2, SVT Play, TV4, TV4 Play, Viaplay, V Sport 1, V Sport 2, V Sport Football, V Sport Hockey, Eurosport 1, Eurosport 2, Discovery+, C More, Max, DAZN, TV3, TV6, Sportkanalen
+
+## Liga-badges (färgkodade)
+
+Champions League, Europa League, Conference League, Premier League, Allsvenskan, Superettan, Damallsvenskan, Bundesliga, La Liga, Serie A, Ligue 1, SHL, Hockeyallsvenskan, NHL, ATP, WTA, PGA Tour
+
+## Ändra källor efter installation
+
+Gå till **Inställningar → Enheter & Tjänster → SportGuiden → Alternativ** och kryssa i/ur sporter.
+
+## Krav
 
 - Home Assistant 2023.11+
-- Python 3.9+ with `requests` library (pre-installed in HA)
-- Internet access from HA to tv.nu
+- Internetåtkomst till tv.nu
 
-## Data source
+## Datakälla
 
-All sport data is scraped from [tv.nu/sport](https://www.tv.nu/sport), Sweden's largest TV guide.
+All sportdata hämtas från [tv.nu/sport](https://www.tv.nu/sport), Sveriges största TV-guide.
 
-## License
+## Licens
 
 MIT
