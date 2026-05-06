@@ -10,7 +10,7 @@
 
 console.log("SportGuiden: card JS loaded");
 
-const SPORTGUIDEN_VERSION = "2.13.0";
+const SPORTGUIDEN_VERSION = "2.14.0";
 
 const LOGOS_BASE = "/sportguiden/logos";
 const _LOGO_MAP = [
@@ -124,6 +124,7 @@ class SportguidenCard extends HTMLElement {
       background: "gradient",
       card_bg_color: "",
       text_color: "",
+      show_title: true,
       show_channel_logo: !legacyOff,
       show_channel_name: !legacyOff,
       show_league: true,
@@ -363,18 +364,14 @@ class SportguidenCard extends HTMLElement {
           width: 100%; height: 100%;
           object-fit: contain;
         }
-        .sg-channel-badge {
-          flex-shrink: 0;
-          font-size: 0.62em;
+        .sg-channel-name {
+          display: inline-block;
+          font-size: 0.65em;
           font-weight: 700;
-          padding: 3px 8px;
-          border-radius: 6px;
-          max-width: 80px;
-          text-align: center;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          padding: 2px 7px;
+          border-radius: 8px;
           letter-spacing: 0.01em;
+          white-space: nowrap;
         }
         .sg-info {
           flex: 1;
@@ -466,22 +463,23 @@ class SportguidenCard extends HTMLElement {
     const league = ev.league || "";
     const sport = ev.sport || "";
     const channel = ev.channel || "";
+    const showLogo = c.show_channel_logo !== false;
+    const showName = c.show_channel_name !== false;
 
-    // Channel display
-    let channelHtml = "";
-    if (channel) {
-      const showLogo = c.show_channel_logo !== false;
-      const showName = c.show_channel_name !== false;
-      if (showLogo || showName) {
-        const logoUrl = showLogo ? this._getChannelLogo(channel) : null;
-        if (logoUrl) {
-          channelHtml = `<div class="sg-channel-logo"><img src="${logoUrl}" alt="${this._escapeHtml(channel)}" loading="lazy"></div>`;
-        } else if (showName) {
-          const displayName = channel.split(/\s*[&,/]\s*/)[0].trim();
-          const fb = this._getChannelFallback(channel);
-          channelHtml = `<div class="sg-channel-badge" style="background:${fb.bg};color:${fb.text};">${this._escapeHtml(displayName)}</div>`;
-        }
-      }
+    // Channel logo – left column
+    const logoUrl = (showLogo && channel) ? this._getChannelLogo(channel) : null;
+    const logoHtml = logoUrl
+      ? `<div class="sg-channel-logo"><img src="${logoUrl}" alt="${this._escapeHtml(channel)}" loading="lazy"></div>`
+      : "";
+
+    // Channel name(s) – meta row. Show if: name toggle is on, OR no logo was found.
+    let channelNameHtml = "";
+    if (channel && (showName || !logoUrl)) {
+      const parts = channel.split(/\s*[&,/]\s*/).map(s => s.trim()).filter(Boolean);
+      channelNameHtml = parts.map(ch => {
+        const fb = this._getChannelFallback(ch);
+        return `<span class="sg-channel-name" style="background:${fb.bg};color:${fb.text};">${this._escapeHtml(ch)}</span>`;
+      }).join("");
     }
 
     // League badge
@@ -492,20 +490,21 @@ class SportguidenCard extends HTMLElement {
       leagueHtml = `<span class="sg-league" style="background:${color};color:#fff;">${this._escapeHtml(cleanLeague)}</span>`;
     }
 
-    // Sport label (show if no league)
+    // Sport label (only if no league and no channel names)
     let sportHtml = "";
-    if (sport && !league) {
+    if (sport && !league && !channelNameHtml) {
       sportHtml = `<span class="sg-sport-label">${this._escapeHtml(sport)}</span>`;
     }
 
     return `
       <li class="sg-event">
         ${c.show_time && time ? `<div class="sg-time">${time}</div>` : ""}
-        ${channelHtml}
+        ${logoHtml}
         <div class="sg-info">
           <div class="sg-event-title">${title}</div>
           <div class="sg-meta">
             ${leagueHtml}
+            ${channelNameHtml}
             ${sportHtml}
           </div>
         </div>
