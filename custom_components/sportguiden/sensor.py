@@ -65,7 +65,7 @@ class SportguidenSensor(CoordinatorEntity, SensorEntity):
         return {
             "identifiers": {(DOMAIN, self._entry.entry_id)},
             "name": "SportGuiden",
-            "manufacturer": "tv.nu",
+            "manufacturer": "SportGuiden",
             "model": "Sport TV Listings",
             "entry_type": "service",
         }

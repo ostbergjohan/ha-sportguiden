@@ -10,7 +10,71 @@
 
 console.log("SportGuiden: card JS loaded");
 
-const SPORTGUIDEN_VERSION = "2.6.0";
+const SPORTGUIDEN_VERSION = "2.7.0";
+
+const LOGOS_BASE = "/sportguiden/logos";
+const _LOGO_MAP = [
+  [["svt1"],                                              `${LOGOS_BASE}/svt1.png`],
+  [["svt2"],                                              `${LOGOS_BASE}/svt2.png`],
+  [["tv4 sport","tv4sport","sportkanalen tv4"],            `${LOGOS_BASE}/tv4sport.png`],
+  [["tv4"],                                               `${LOGOS_BASE}/tv4.png`],
+  [["viaplay"],                                           `${LOGOS_BASE}/viaplay.png`],
+  [["v sport 1","vsport1","v sport premium"],              `${LOGOS_BASE}/vsport1.png`],
+  [["v sport 2","vsport2"],                               `${LOGOS_BASE}/vsport2.png`],
+  [["v sport fotboll","v sport football","vsport fotboll"],`${LOGOS_BASE}/vsportfotboll.png`],
+  [["tv3"],                                               `${LOGOS_BASE}/tv3.png`],
+  [["tv6"],                                               `${LOGOS_BASE}/tv6.png`],
+  [["tv8"],                                               `${LOGOS_BASE}/tv8.png`],
+  [["sportkanalen"],                                      `${LOGOS_BASE}/sportkanalen.png`],
+];
+const _CHANNEL_FALLBACK = {
+  "svt":        { bg: "#006AB3", text: "#fff" },
+  "svt play":   { bg: "#006AB3", text: "#fff" },
+  "tv4 play":   { bg: "#E31E24", text: "#fff" },
+  "eurosport":  { bg: "#003DA5", text: "#fff" },
+  "discovery+": { bg: "#2175D9", text: "#fff" },
+  "c more":     { bg: "#F5821F", text: "#fff" },
+  "max":        { bg: "#5822E9", text: "#fff" },
+  "dazn":       { bg: "#111",    text: "#F5F500" },
+  "kanal 5":    { bg: "#e4a000", text: "#fff" },
+};
+const _LEAGUE_COLORS = {
+  "champions league": "#1a237e",
+  "europa league": "#e65100",
+  "conference league": "#004d40",
+  "premier league": "#38003c",
+  "allsvenskan": "#002f6c",
+  "superettan": "#1565c0",
+  "damallsvenskan": "#6a1b9a",
+  "bundesliga": "#d50000",
+  "la liga": "#ff6f00",
+  "serie a": "#1b5e20",
+  "ligue 1": "#0d47a1",
+  "fa women's super league": "#880e4f",
+  "svenska cupen": "#f9a825",
+  "shl": "#002855",
+  "hockeyallsvenskan": "#003d7a",
+  "nhl": "#000000",
+  "atp": "#00529b",
+  "wta": "#5c068c",
+  "world tour": "#e91e63",
+  "pga tour": "#003366",
+};
+const _SPORT_ICONS = {
+  "fotboll": "mdi:soccer",
+  "ishockey": "mdi:hockey-puck",
+  "tennis": "mdi:tennis",
+  "motorsport": "mdi:racing-helmet",
+  "golf": "mdi:golf",
+  "basket": "mdi:basketball",
+  "handboll": "mdi:handball",
+  "bordtennis": "mdi:table-tennis",
+  "cykling": "mdi:bike",
+  "friidrott": "mdi:run",
+  "simning": "mdi:swim",
+  "vintersport": "mdi:skiing",
+  "baseball": "mdi:baseball",
+};
 
 class SportguidenCard extends HTMLElement {
   constructor() {
@@ -163,86 +227,6 @@ class SportguidenCard extends HTMLElement {
     const title = c.title || this._autoTitle || "Sport på TV idag";
     const headerIcon = c.header_icon || this._autoIcon || "mdi:television-classic";
 
-    const LOGOS_BASE = "/sportguiden/logos";
-    const _logoMap = [
-      [["svt1"],                          `${LOGOS_BASE}/svt1.png`],
-      [["svt2"],                          `${LOGOS_BASE}/svt2.png`],
-      [["tv4 sport","tv4sport","sportkanalen tv4"], `${LOGOS_BASE}/tv4sport.png`],
-      [["tv4"],                           `${LOGOS_BASE}/tv4.png`],
-      [["viaplay"],                       `${LOGOS_BASE}/viaplay.png`],
-      [["v sport 1","vsport1","v sport premium"], `${LOGOS_BASE}/vsport1.png`],
-      [["v sport 2","vsport2"],           `${LOGOS_BASE}/vsport2.png`],
-      [["v sport fotboll","v sport football","vsport fotboll"], `${LOGOS_BASE}/vsportfotboll.png`],
-      [["tv3"],                           `${LOGOS_BASE}/tv3.png`],
-      [["tv6"],                           `${LOGOS_BASE}/tv6.png`],
-      [["tv8"],                           `${LOGOS_BASE}/tv8.png`],
-      [["sportkanalen"],                  `${LOGOS_BASE}/sportkanalen.png`],
-    ];
-    const _getChannelLogo = (ch) => {
-      const k = ch.toLowerCase().trim();
-      for (const [keys, url] of _logoMap) {
-        if (keys.some(key => k.includes(key))) return url;
-      }
-      return null;
-    };
-    const channelFallbackColors = {
-      "svt":        { bg: "#006AB3", text: "#fff" },
-      "svt play":   { bg: "#006AB3", text: "#fff" },
-      "tv4 play":   { bg: "#E31E24", text: "#fff" },
-      "eurosport":  { bg: "#003DA5", text: "#fff" },
-      "discovery+": { bg: "#2175D9", text: "#fff" },
-      "c more":     { bg: "#F5821F", text: "#fff" },
-      "max":        { bg: "#5822E9", text: "#fff" },
-      "dazn":       { bg: "#111",    text: "#F5F500" },
-      "kanal 5":    { bg: "#e4a000", text: "#fff" },
-    };
-    const _getChannelFallback = (ch) => {
-      const k = ch.toLowerCase().trim();
-      for (const [key, val] of Object.entries(channelFallbackColors)) {
-        if (k.includes(key)) return val;
-      }
-      return { bg: "rgba(255,255,255,0.12)", text: "rgba(255,255,255,0.9)" };
-    };
-
-    const leagueColors = {
-      "champions league": "#1a237e",
-      "europa league": "#e65100",
-      "conference league": "#004d40",
-      "premier league": "#38003c",
-      "allsvenskan": "#002f6c",
-      "superettan": "#1565c0",
-      "damallsvenskan": "#6a1b9a",
-      "bundesliga": "#d50000",
-      "la liga": "#ff6f00",
-      "serie a": "#1b5e20",
-      "ligue 1": "#0d47a1",
-      "fa women's super league": "#880e4f",
-      "svenska cupen": "#f9a825",
-      "shl": "#002855",
-      "hockeyallsvenskan": "#003d7a",
-      "nhl": "#000000",
-      "atp": "#00529b",
-      "wta": "#5c068c",
-      "world tour": "#e91e63",
-      "pga tour": "#003366",
-    };
-
-    const sportIcons = {
-      "fotboll": "mdi:soccer",
-      "ishockey": "mdi:hockey-puck",
-      "tennis": "mdi:tennis",
-      "motorsport": "mdi:racing-helmet",
-      "golf": "mdi:golf",
-      "basket": "mdi:basketball",
-      "handboll": "mdi:handball",
-      "bordtennis": "mdi:table-tennis",
-      "cykling": "mdi:bike",
-      "friidrott": "mdi:run",
-      "simning": "mdi:swim",
-      "vintersport": "mdi:skiing",
-      "baseball": "mdi:baseball",
-    };
-
     this.shadowRoot.innerHTML = `
       <style>
         :host { display: block; }
@@ -272,7 +256,7 @@ class SportguidenCard extends HTMLElement {
           margin-bottom: ${c.compact ? "12px" : "20px"};
         }
         .sg-header-icon {
-          width: 42px; height: 42px;
+          width: 64px; height: 64px;
           border-radius: 12px;
           display: flex; align-items: center; justify-content: center;
           flex-shrink: 0;
@@ -417,13 +401,29 @@ class SportguidenCard extends HTMLElement {
               <div class="sg-empty-icon">📺</div>
               <div>Ingen sport på TV just nu</div>
             </div>
-          ` : events.map((ev) => this._renderEvent(ev, channelLogos, leagueColors, sportIcons)).join("")}
+          ` : events.map((ev) => this._renderEvent(ev)).join("")}
         </ul>
       </div>
     `;
   }
 
-  _renderEvent(ev, channelLogos, leagueColors, sportIcons) {
+  _getChannelLogo(ch) {
+    const k = ch.toLowerCase().trim();
+    for (const [keys, url] of _LOGO_MAP) {
+      if (keys.some(key => k.includes(key))) return url;
+    }
+    return null;
+  }
+
+  _getChannelFallback(ch) {
+    const k = ch.toLowerCase().trim();
+    for (const [key, val] of Object.entries(_CHANNEL_FALLBACK)) {
+      if (k.includes(key)) return val;
+    }
+    return { bg: "rgba(255,255,255,0.12)", text: "rgba(255,255,255,0.9)" };
+  }
+
+  _renderEvent(ev) {
     const c = this._config;
     const time = ev.time || "";
     const title = this._escapeHtml(ev.title || "");
@@ -434,11 +434,11 @@ class SportguidenCard extends HTMLElement {
     // Channel display
     let channelHtml = "";
     if (c.show_channel && channel) {
-      const logoUrl = _getChannelLogo(channel);
+      const logoUrl = this._getChannelLogo(channel);
       if (logoUrl) {
         channelHtml = `<div class="sg-channel-logo"><img src="${logoUrl}" alt="${this._escapeHtml(channel)}" loading="lazy"></div>`;
       } else {
-        const fb = _getChannelFallback(channel);
+        const fb = this._getChannelFallback(channel);
         channelHtml = `<div class="sg-channel-badge" style="background:${fb.bg};color:${fb.text};">${this._escapeHtml(channel)}</div>`;
       }
     }
@@ -447,7 +447,7 @@ class SportguidenCard extends HTMLElement {
     let leagueHtml = "";
     if (c.show_league && league) {
       const cleanLeague = league.replace(/&#x27;/g, "'").replace(/&amp;/g, "&");
-      const color = leagueColors[cleanLeague.toLowerCase()] || "#444";
+      const color = _LEAGUE_COLORS[cleanLeague.toLowerCase()] || "#444";
       leagueHtml = `<span class="sg-league" style="background:${color};color:#fff;">${this._escapeHtml(cleanLeague)}</span>`;
     }
 
