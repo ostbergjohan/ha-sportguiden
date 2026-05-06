@@ -173,12 +173,7 @@ These are selected in the integration config flow (checkboxes):
 |--------|-------------|
 | All sport | Everything on tv.nu/sport |
 | Fotboll | All football |
-| Champions League | UEFA Champions League |
-| Premier League | English Premier League |
-| Allsvenskan | Swedish top division |
-| Europa League | UEFA Europa League |
 | Ishockey | All ice hockey |
-| SHL | Swedish Hockey League |
 | Tennis | All tennis |
 | Motorsport | Formula 1, MotoGP, etc. |
 | Vintersport | Skiing, biathlon, etc. |
