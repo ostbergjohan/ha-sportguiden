@@ -6,8 +6,6 @@ Home Assistant integration that shows today's live sport on TV and streaming in 
 
 ![SportGuiden](soccer-tv.png)
 
-> **Live preview:** Open [preview.html](preview.html) in your browser to see how the cards look.
-
 ## Features
 
 - **Zero-config**: Install via HACS → Add integration → pick sports → done. No YAML needed.
