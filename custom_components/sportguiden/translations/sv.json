@@ -3,25 +3,11 @@
     "step": {
       "user": {
         "title": "SportGuiden",
-        "description": "Välj vilka sporter/ligor du vill se på TV idag (från tv.nu). Du kan ändra detta senare under Alternativ.",
-        "data": {
-          "sources": "Sporter att bevaka"
-        }
+        "description": "Installera SportGuiden för att visa dagens sport på TV (via tv.nu). Alla sportkategorier hämtas automatiskt."
       }
     },
     "abort": {
       "already_configured": "SportGuiden är redan installerad."
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "SportGuiden – Inställningar",
-        "description": "Välj vilka sporter/ligor som ska skrapas från tv.nu.",
-        "data": {
-          "sources": "Sporter att bevaka"
-        }
-      }
     }
   }
 }

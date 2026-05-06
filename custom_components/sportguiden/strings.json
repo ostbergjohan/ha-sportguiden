@@ -3,25 +3,11 @@
     "step": {
       "user": {
         "title": "SportGuiden",
-        "description": "Välj vilka sporter/ligor du vill följa. Du kan ändra detta senare under integrationens inställningar.",
-        "data": {
-          "sources": "Källor att skrapa"
-        }
+        "description": "Installera SportGuiden för att visa dagens sport på TV. Alla sportkategorier hämtas automatiskt."
       }
     },
     "abort": {
-      "already_configured": "SportGuiden är redan installerad. Gå till integrationens inställningar för att ändra källor."
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "SportGuiden – Inställningar",
-        "description": "Välj vilka sporter/ligor du vill följa.",
-        "data": {
-          "sources": "Källor att skrapa"
-        }
-      }
+      "already_configured": "SportGuiden är redan installerad."
     }
   }
 }

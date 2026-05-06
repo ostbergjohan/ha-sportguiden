@@ -3,25 +3,11 @@
     "step": {
       "user": {
         "title": "SportGuiden",
-        "description": "Choose which sports/leagues to monitor on TV today (from tv.nu). You can change this later in Options.",
-        "data": {
-          "sources": "Sports to track"
-        }
+        "description": "Install SportGuiden to show today's sport on TV (via tv.nu). All sport categories are fetched automatically."
       }
     },
     "abort": {
       "already_configured": "SportGuiden is already configured."
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "SportGuiden – Settings",
-        "description": "Choose which sports/leagues to scrape from tv.nu.",
-        "data": {
-          "sources": "Sports to track"
-        }
-      }
     }
   }
 }
