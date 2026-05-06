@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"C:\\\\git\\\\fotbollstabeller-hacs\\\\dist\" -ErrorAction SilentlyContinue | ForEach-Object { Write-Output \"$\\($_.Name\\)\" })"
+    ],
+    "defaultMode": "bypassPermissions"
+  }
+}
