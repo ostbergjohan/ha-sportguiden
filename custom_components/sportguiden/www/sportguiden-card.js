@@ -10,7 +10,7 @@
 
 console.log("SportGuiden: card JS loaded");
 
-const SPORTGUIDEN_VERSION = "2.11.0";
+const SPORTGUIDEN_VERSION = "2.13.0";
 
 const LOGOS_BASE = "/sportguiden/logos";
 const _LOGO_MAP = [
@@ -113,8 +113,10 @@ class SportguidenCard extends HTMLElement {
       throw new Error("Du måste ange entity (t.ex. sensor.sportguiden)");
     }
     // Backward compat: convert old single `source` string to `sources` array
-    const { source: _legacySource, ...restConfig } = config;
+    const { source: _legacySource, show_channel: _legacyShowChannel, ...restConfig } = config;
     const sources = config.sources || (_legacySource ? [_legacySource] : []);
+    // Backward compat: old show_channel:false → both logo and name off
+    const legacyOff = _legacyShowChannel === false;
     this._config = {
       title: "🏆 Sport på TV idag",
       accent_color: "#667eea",
@@ -122,7 +124,8 @@ class SportguidenCard extends HTMLElement {
       background: "gradient",
       card_bg_color: "",
       text_color: "",
-      show_channel: true,
+      show_channel_logo: !legacyOff,
+      show_channel_name: !legacyOff,
       show_league: true,
       show_time: true,
       show_header_icon: true,
@@ -200,10 +203,11 @@ class SportguidenCard extends HTMLElement {
     // Filter by channels if configured
     const channelFilter = this._config.channels || [];
     if (channelFilter.length > 0) {
-      const filterLower = channelFilter.map(c => c.toLowerCase());
+      const norm = s => s.toLowerCase().replace(/\s+/g, "");
+      const filterNorm = channelFilter.map(norm);
       events = events.filter(ev => {
-        const ch = (ev.channel || "").toLowerCase();
-        return ch && filterLower.some(f => ch.includes(f));
+        const chParts = (ev.channel || "").split(/\s*[&,/]\s*/).map(norm).filter(Boolean);
+        return chParts.some(part => filterNorm.some(f => part.includes(f) || f.includes(part)));
       });
     }
 
@@ -254,7 +258,7 @@ class SportguidenCard extends HTMLElement {
     const textColor = c.text_color || "#ffffff";
     const accent = this._autoAccent || c.accent_color || "#667eea";
     const accent2 = c.accent_color_2 || "#764ba2";
-    const title = c.title || this._autoTitle || "Sport på TV idag";
+    const title = c.title || "Sport på TV idag";
     const headerIcon = c.header_icon || this._autoIcon || "mdi:television-classic";
 
     this.shadowRoot.innerHTML = `
@@ -438,9 +442,9 @@ class SportguidenCard extends HTMLElement {
   _getChannelLogo(ch) {
     const parts = ch.split(/\s*[&,/]\s*/).map(s => s.trim()).filter(Boolean);
     for (const part of parts) {
-      const k = part.toLowerCase();
+      const k = part.toLowerCase().replace(/\s+/g, "");
       for (const [keys, url] of _LOGO_MAP) {
-        if (keys.some(key => k.includes(key))) return url;
+        if (keys.some(key => k.includes(key.replace(/\s+/g, "")))) return url;
       }
     }
     return null;
@@ -448,9 +452,9 @@ class SportguidenCard extends HTMLElement {
 
   _getChannelFallback(ch) {
     const firstPart = ch.split(/\s*[&,/]\s*/)[0].trim();
-    const k = firstPart.toLowerCase();
+    const k = firstPart.toLowerCase().replace(/\s+/g, "");
     for (const [key, val] of Object.entries(_CHANNEL_FALLBACK)) {
-      if (k.includes(key)) return val;
+      if (k.includes(key.replace(/\s+/g, ""))) return val;
     }
     return { bg: "rgba(255,255,255,0.12)", text: "rgba(255,255,255,0.9)" };
   }
@@ -465,13 +469,18 @@ class SportguidenCard extends HTMLElement {
 
     // Channel display
     let channelHtml = "";
-    if (c.show_channel && channel) {
-      const logoUrl = this._getChannelLogo(channel);
-      if (logoUrl) {
-        channelHtml = `<div class="sg-channel-logo"><img src="${logoUrl}" alt="${this._escapeHtml(channel)}" loading="lazy"></div>`;
-      } else {
-        const fb = this._getChannelFallback(channel);
-        channelHtml = `<div class="sg-channel-badge" style="background:${fb.bg};color:${fb.text};">${this._escapeHtml(channel)}</div>`;
+    if (channel) {
+      const showLogo = c.show_channel_logo !== false;
+      const showName = c.show_channel_name !== false;
+      if (showLogo || showName) {
+        const logoUrl = showLogo ? this._getChannelLogo(channel) : null;
+        if (logoUrl) {
+          channelHtml = `<div class="sg-channel-logo"><img src="${logoUrl}" alt="${this._escapeHtml(channel)}" loading="lazy"></div>`;
+        } else if (showName) {
+          const displayName = channel.split(/\s*[&,/]\s*/)[0].trim();
+          const fb = this._getChannelFallback(channel);
+          channelHtml = `<div class="sg-channel-badge" style="background:${fb.bg};color:${fb.text};">${this._escapeHtml(displayName)}</div>`;
+        }
       }
     }
 
@@ -721,7 +730,8 @@ class SportguidenCardEditor extends HTMLElement {
         </div>
         <h3>Visa / Dölj</h3>
         <div class="checkbox-row"><input id="show_time" type="checkbox" ${this._config.show_time !== false ? "checked" : ""}><label>Visa tid</label></div>
-        <div class="checkbox-row"><input id="show_channel" type="checkbox" ${this._config.show_channel !== false ? "checked" : ""}><label>Visa kanal</label></div>
+        <div class="checkbox-row"><input id="show_channel_logo" type="checkbox" ${this._config.show_channel_logo !== false ? "checked" : ""}><label>Visa kanallogga</label></div>
+        <div class="checkbox-row"><input id="show_channel_name" type="checkbox" ${this._config.show_channel_name !== false ? "checked" : ""}><label>Visa kanalnamn</label></div>
         <div class="checkbox-row"><input id="show_league" type="checkbox" ${this._config.show_league !== false ? "checked" : ""}><label>Visa liga/turnering</label></div>
         <div class="checkbox-row"><input id="show_header_icon" type="checkbox" ${this._config.show_header_icon !== false ? "checked" : ""}><label>Visa header-ikon</label></div>
         <div class="row">
@@ -737,7 +747,7 @@ class SportguidenCardEditor extends HTMLElement {
       const el = this.shadowRoot.getElementById(field);
       if (el) el.addEventListener("change", (e) => { this._config = {...this._config, [field]: e.target.value}; this._dispatch(); });
     });
-    ["show_time","show_channel","show_league","show_header_icon","compact"].forEach((field) => {
+    ["show_time","show_channel_logo","show_channel_name","show_league","show_header_icon","compact"].forEach((field) => {
       const el = this.shadowRoot.getElementById(field);
       if (el) el.addEventListener("change", (e) => { this._config = {...this._config, [field]: e.target.checked}; this._dispatch(); });
     });

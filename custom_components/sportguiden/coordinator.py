@@ -116,7 +116,7 @@ def parse_events(html: str, today_str: str) -> list[dict]:
 
     for m in aria_links:
         time_str = m.group(1)
-        title = m.group(2).strip()
+        title = _html.unescape(m.group(2).strip())
 
         if not title or " - " not in title:
             continue
