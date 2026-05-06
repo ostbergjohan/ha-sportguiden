@@ -1,5 +1,5 @@
 {
   "name": "SportGuiden",
   "render_readme": true,
-  "filename": "dist/sportguiden-card.js"
+  "homeassistant": "2023.11.0"
 }

@@ -1,0 +1,12 @@
+{
+  "domain": "sportguiden",
+  "name": "SportGuiden (tv.nu)",
+  "codeowners": ["@ostbergjohan"],
+  "config_flow": true,
+  "dependencies": ["frontend", "http"],
+  "documentation": "https://github.com/ostbergjohan/ha-sportguiden",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/ostbergjohan/ha-sportguiden/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}
