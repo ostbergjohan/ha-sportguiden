@@ -4,8 +4,6 @@
 
 Home Assistant integration that shows today's live sport on TV and streaming in Sweden (via [tv.nu](https://www.tv.nu/sport)). Zero-config – install and go!
 
-![SportGuiden](Sportguiden.png)
-
 ### Exempel på kort / Card example
 
 ![Exempel på SportGuiden-kort](example.jpg)
