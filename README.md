@@ -6,6 +6,10 @@ Home Assistant integration that shows today's live sport on TV and streaming in 
 
 ![SportGuiden](Sportguiden.png)
 
+### Exempel på kort / Card example
+
+![Exempel på SportGuiden-kort](example.jpg)
+
 ## Features
 
 - **Zero-config**: Install via HACS → Add integration → done. No YAML needed.
